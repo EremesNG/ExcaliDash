@@ -126,7 +126,7 @@ export const useEditorSceneApi = ({
           void scanFileUploads();
         };
       }
-      setIsReady(true);
+      setIsReady(Boolean(api));
     },
     [
       debouncedSaveRef,

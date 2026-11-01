@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "test:adapter": "node tests/adapter.integration.mjs",
     "test:frontend": "npm --prefix frontend run test:unit",
-    "check:public-source": "node scripts/check-public-source.mjs"
+    "check:public-source": "node scripts/check-public-source.mjs",
+    "check:editor-upstream": "node scripts/check-editor-upstream.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

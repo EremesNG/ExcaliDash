@@ -7,6 +7,47 @@ class HttpError extends Error { constructor(public status:number,message:string)
 const assert = (value:any, status:number, message:string):void => { if(!value) throw new HttpError(status,message); };
 const uid = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
+const pinnedEditor = {
+ package: upstream.editor.package,
+ version: upstream.editor.version,
+ commit: upstream.editor.commit,
+ shortCommit: upstream.editor.commit.slice(0,7),
+ releasedAt: upstream.editor.releasedAt,
+};
+type EditorProductionBuild = {version:string;shortCommit:string;releasedAt:string};
+type EditorStatusResponse = {
+ pinned:typeof pinnedEditor;
+ upstream:EditorProductionBuild|null;
+ status:'match'|'newer'|'different'|'unavailable';
+ checkedAt:string;
+ sourceUrl:string;
+};
+// Share only completed public metadata across requests, never request-owned I/O.
+let editorCache:{result:EditorStatusResponse;expiresAt:number}|undefined;
+async function editorStatus():Promise<EditorStatusResponse>{
+ if(editorCache&&editorCache.expiresAt>Date.now())return editorCache.result;
+ let production:EditorProductionBuild|null=null;
+ try{
+  const response=await fetch(upstream.editor.productionVersionUrl,{signal:AbortSignal.timeout(3000),headers:{accept:'application/json'}});
+  if(!response.ok)throw new Error('Editor production version unavailable');
+  const data:unknown=await response.json();
+  const version=data&&typeof data==='object'&&'version'in data?data.version:null;
+  if(typeof version!=='string')throw new Error('Missing editor production version');
+  const match=/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))-([a-f0-9]{7,40})$/i.exec(version);
+  if(!match||!Number.isFinite(Date.parse(match[1])))throw new Error('Invalid editor production version');
+  production={version,shortCommit:match[2].slice(0,7).toLowerCase(),releasedAt:match[1]};
+ }catch{
+  // Outbound and parse failures are an informational UI state, not API errors.
+ }
+ let status:EditorStatusResponse['status']='unavailable';
+ if(production){
+  if(production.shortCommit===pinnedEditor.shortCommit.toLowerCase())status='match';
+  else status=Date.parse(production.releasedAt)>Date.parse(pinnedEditor.releasedAt)?'newer':'different';
+ }
+ const result:EditorStatusResponse={pinned:pinnedEditor,upstream:production,status,checkedAt:now(),sourceUrl:upstream.editor.productionVersionUrl};
+ editorCache={result,expiresAt:Date.now()+(production?15*60_000:60_000)};
+ return result;
+}
 const safeId = (id:string) => /^[a-zA-Z0-9_-]{1,160}$/.test(id);
 const nameOf = (v:any) => { assert(typeof v==='string' && v.trim().length>0 && v.length<=500,400,'Invalid name'); return v.trim(); };
 async function body(req:Request){ assert(Number(req.headers.get('content-length')||0)<=MAX_JSON,413,'Request too large'); const raw=await req.text(); assert(raw.length<=MAX_JSON,413,'Request too large'); try{return raw?JSON.parse(raw):{}}catch{throw new HttpError(400,'Invalid JSON')} }
@@ -51,6 +92,10 @@ async function route(req:Request,env:any):Promise<Response>{
   if(p[1]==='preferences'){if(method==='PUT'){const b=await body(req);await run('UPDATE users SET preferences=? WHERE id=?',JSON.stringify({...JSON.parse(user.preferences),...b}),userId);user=await first('SELECT * FROM users WHERE id=?',userId);}return json({preferences:JSON.parse(user.preferences)});}
   if(p[1]==='profile'&&method==='PUT'){const b=await body(req);await run('UPDATE users SET name=? WHERE id=?',nameOf(b.name),userId);user=await first('SELECT * FROM users WHERE id=?',userId);return json({user:publicUser()});}
   throw new HttpError(409,'Authentication is managed by ChatGPT Sites');
+ }
+ if(p.join('/')==='system/editor'){
+  assert(method==='GET',405,'Method not allowed');
+  return json(await editorStatus());
  }
  if(p[0]==='system')return json({currentVersion:upstream.version,upstreamCommit:upstream.commit,adapterVersion:upstream.adapterVersion,updateMode:upstream.updateMode,channel:'stable',outboundEnabled:false,latestVersion:null,latestUrl:null,publishedAt:null,isUpdateAvailable:false});
  if(p[0]==='library'){if(method==='PUT'){const b=await body(req);assert(Array.isArray(b.items),400,'Invalid library');await run('UPDATE users SET library=? WHERE id=?',JSON.stringify(b.items),userId);return json({items:b.items});}return json({items:JSON.parse(user.library)});}

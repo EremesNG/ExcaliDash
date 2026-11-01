@@ -57,12 +57,26 @@ Run from the repository root unless noted:
 
 ```sh
 pnpm install --frozen-lockfile
-npm --prefix frontend ci --no-audit --no-fund
+npx -y npm@10.9.2 --prefix frontend ci --no-audit --no-fund
 ```
 
 Do not install the reference backend just to develop or verify the deployed adapter.
 Do not replace lockfiles with those from another package manager or mix the root
 and frontend React/Tailwind versions.
+
+## Excalidraw editor
+
+Pin exact published versions only, never ranges or moving dist-tags. The current
+pin is `@excalidraw/excalidraw@0.18.0-4ce8305`, independent of ExcaliDash 0.6.7.
+Provenance lives in the `editor` block of `upstream.json`; follow the
+[editor update procedure](docs/UPDATES.md#actualizar-el-editor-excalidraw), including
+backup-before-publish and the lossy rollback caveat. Keep editor bumps separate.
+
+`npm run check:editor-upstream` checks local consistency and reports upstream drift;
+append `-- --offline` for the CI consistency-only check. Only local inconsistency
+fails the check. Use `npx -y npm@10.9.2 --prefix frontend ...` for frontend installs
+and lockfile changes. The adapter's only outbound fetch is the server-side
+excalidraw.com comparison behind authenticated `GET /api/system/editor`.
 
 ## Development and generated files
 
@@ -120,6 +134,10 @@ pnpm test:frontend
 npm --prefix frontend run test:unit -- tests/sites-transport.test.tsx
 ```
 
+Editor regressions include `frontend/tests/editor-thumbnail-exports.test.tsx`,
+`frontend/tests/editor-scene-api.test.tsx` and
+`frontend/tests/settings-advanced.test.tsx`.
+
 API, identity, ownership, storage or concurrency changes need adapter coverage:
 
 ```sh
@@ -135,6 +153,7 @@ after the frozen installs above:
 
 ```sh
 npm run check:public-source
+npm run check:editor-upstream -- --offline
 npm run build
 node node_modules/typescript/bin/tsc --noEmit
 node frontend/node_modules/typescript/bin/tsc -b frontend/tsconfig.json
