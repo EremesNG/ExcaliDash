@@ -1,3 +1,5 @@
+import { translate } from "../i18n";
+import { getApiErrorMessage } from "./getApiErrorMessage";
 import { api } from "../api";
 import { type UploadStatus } from "../context/UploadContext";
 import {
@@ -7,10 +9,9 @@ import {
   importLegacyZip,
   isLegacyExportJson,
   makeSvgPreview,
+  parseImportJson,
   type LegacyExportDrawing,
 } from "./importHelpers";
-
-export const EXCALIDASH_REQUIRED_MESSAGE = "A .excalidash file is required.";
 
 export const isExcalidashFile = (file: Pick<File, "name">): boolean =>
   file.name.toLowerCase().endsWith(".excalidash");
@@ -31,7 +32,11 @@ export const importDrawings = async (
   );
 
   if (drawingFiles.length === 0) {
-    return { success: 0, failed: 0, errors: ["No supported files found."] };
+    return {
+      success: 0,
+      failed: 0,
+      errors: [translate("importExport.import.noSupportedFiles")],
+    };
   }
 
   let successCount = 0;
@@ -51,9 +56,13 @@ export const importDrawings = async (
         if (onProgress) onProgress(fileIndex, "processing", 0);
 
         const text = await file.text();
-        const parsed = JSON.parse(text) as unknown;
+        const parsed = parseImportJson(text, file.name);
         const extracted = extractDrawingData(parsed);
-        if (!extracted) throw new Error(`Invalid file structure: ${file.name}`);
+        if (!extracted) {
+          throw new Error(translate("importExport.import.invalidStructure", {
+            filename: file.name,
+          }));
+        }
 
         const svg = await makeSvgPreview(
           extracted.elements,
@@ -90,15 +99,17 @@ export const importDrawings = async (
 
         if (onProgress) onProgress(fileIndex, "success", 100);
         successCount++;
-      } catch (err: any) {
+      } catch (err) {
         console.error(`Failed to import ${file.name}:`, err);
         failCount++;
-        const errorMessage =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          "Upload failed";
-        errors.push(`${file.name}: ${errorMessage}`);
+        const errorMessage = getApiErrorMessage(
+          err,
+          translate("importExport.import.failed"),
+        );
+        errors.push(translate("importExport.import.fileError", {
+          filename: file.name,
+          error: errorMessage,
+        }));
         if (onProgress) onProgress(fileIndex, "error", 0, errorMessage);
       }
     }),
@@ -135,7 +146,11 @@ export const importLegacyFiles = async (
   );
 
   if (drawingFiles.length === 0) {
-    return { success: 0, failed: 0, errors: ["No supported files found."] };
+    return {
+      success: 0,
+      failed: 0,
+      errors: [translate("importExport.import.noSupportedFiles")],
+    };
   }
 
   let successCount = 0;
@@ -172,7 +187,7 @@ export const importLegacyFiles = async (
         }
 
         const text = await file.text();
-        const parsed = JSON.parse(text) as unknown;
+        const parsed = parseImportJson(text, file.name);
 
         if (isLegacyExportJson(parsed)) {
           const exportJson = parsed;
@@ -181,7 +196,7 @@ export const importLegacyFiles = async (
             : [];
 
           if (drawings.length === 0) {
-            throw new Error("Legacy export JSON contains no drawings.");
+            throw new Error(translate("importExport.legacy.empty"));
           }
 
           for (let i = 0; i < drawings.length; i += 1) {
@@ -190,7 +205,11 @@ export const importLegacyFiles = async (
             if (!extracted) {
               failCount += 1;
               errors.push(
-                `${file.name}: drawing ${i + 1}: Invalid structure (missing elements/appState)`,
+                translate("importExport.legacy.drawingError", {
+                  filename: file.name,
+                  index: i + 1,
+                  error: translate("importExport.legacy.invalidStructure"),
+                }),
               );
               continue;
             }
@@ -225,7 +244,9 @@ export const importLegacyFiles = async (
               name:
                 typeof d.name === "string" && d.name.trim().length > 0
                   ? d.name
-                  : `Imported Drawing ${i + 1}`,
+                  : translate("importExport.legacy.importedDrawing", {
+                      index: i + 1,
+                    }),
               elements: extracted.elements,
               appState: extracted.appState,
               files: extracted.files || null,
@@ -273,16 +294,20 @@ export const importLegacyFiles = async (
           return;
         }
 
-        throw new Error(`Invalid file structure: ${file.name}`);
-      } catch (err: any) {
+        throw new Error(translate("importExport.import.invalidStructure", {
+          filename: file.name,
+        }));
+      } catch (err) {
         console.error(`Failed to import ${file.name}:`, err);
         failCount += 1;
-        const errorMessage =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err?.message ||
-          "Upload failed";
-        errors.push(`${file.name}: ${errorMessage}`);
+        const errorMessage = getApiErrorMessage(
+          err,
+          translate("importExport.import.failed"),
+        );
+        errors.push(translate("importExport.import.fileError", {
+          filename: file.name,
+          error: errorMessage,
+        }));
         if (onProgress) onProgress(fileIndex, "error", 0, errorMessage);
       }
     }),

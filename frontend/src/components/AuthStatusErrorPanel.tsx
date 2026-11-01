@@ -1,3 +1,4 @@
+import { useLocale } from "../context/useLocale";
 import React from "react";
 
 type AuthStatusErrorPanelProps = {
@@ -11,6 +12,7 @@ export const AuthStatusErrorPanel: React.FC<AuthStatusErrorPanelProps> = ({
   onRetry,
   fullScreen = false,
 }) => {
+  const { t } = useLocale();
   const panel = (
     <div className="max-w-lg rounded-md bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-200">
       <div>{message}</div>
@@ -19,7 +21,7 @@ export const AuthStatusErrorPanel: React.FC<AuthStatusErrorPanelProps> = ({
         onClick={() => void onRetry()}
         className="ui-button-secondary mt-3 text-xs"
       >
-        Retry connection
+        {t("common.auth.retry")}
       </button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { translate } from "../i18n";
 import type { Drawing, DrawingSummary } from "../types";
 import { normalizePreviewSvg } from "../utils/previewSvg";
 import { api, isAxiosError } from "./client";
@@ -81,7 +82,7 @@ const deserializeTimestamps = <T extends HasTimestamps>(
 
 const deserializeDrawingSummary = (drawing: unknown): DrawingSummary => {
   if (typeof drawing !== "object" || drawing === null)
-    throw new Error("Invalid drawing data");
+    throw new Error(translate("importExport.api.invalidDrawing"));
   const parsed = drawing as HasTimestamps & DrawingSummary;
   return deserializeTimestamps({
     ...parsed,
@@ -94,7 +95,7 @@ const deserializeDrawingSummary = (drawing: unknown): DrawingSummary => {
 
 const deserializeDrawing = (drawing: unknown): Drawing => {
   if (typeof drawing !== "object" || drawing === null)
-    throw new Error("Invalid drawing data");
+    throw new Error(translate("importExport.api.invalidDrawing"));
   const parsed = drawing as HasTimestamps & Drawing;
   return deserializeTimestamps({
     ...parsed,

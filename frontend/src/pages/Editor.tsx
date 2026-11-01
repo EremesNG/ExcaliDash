@@ -1,4 +1,5 @@
 import * as api from "../api";
+import { useLocale } from "../context/useLocale";
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getInitialLangCode } from "../components/LanguageSelector";
@@ -24,9 +25,11 @@ import { useEditorFileUploads } from "./editor/useEditorFileUploads";
 import { useEditorSceneApi } from "./editor/useEditorSceneApi";
 import { useEditorGridStep } from "./editor/useEditorGridStep";
 import { useKeyboardLayoutFix } from "./editor/useKeyboardLayoutFix";
+import { useRestoreDocumentLanguage } from "./editor/useRestoreDocumentLanguage";
 import { DEFAULT_GRID_STEP } from "../components/GridStepSelector";
 
 export const Editor: React.FC = () => {
+  useRestoreDocumentLanguage();
   const { id } = useParams<{ id: string }>();
   // Keep a departing drawing's queue and refs alive for its unmount flush,
   // while the next drawing starts with its own scene, version and permissions.
@@ -35,6 +38,7 @@ export const Editor: React.FC = () => {
 
 const ExcalidrawEditor: React.FC = () => {
   useKeyboardLayoutFix();
+  const { t } = useLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,7 +48,7 @@ const ExcalidrawEditor: React.FC = () => {
     "none" | "view" | "edit" | "owner"
   >("none");
   const canEdit = accessLevel === "edit" || accessLevel === "owner";
-  const [drawingName, setDrawingName] = useState("Drawing Editor");
+  const [drawingName, setDrawingName] = useState(() => t("editor.chrome.title"));
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState("");
   const [initialData, setInitialData] = useState<any>(null);

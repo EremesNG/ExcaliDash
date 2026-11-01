@@ -10,6 +10,7 @@ import type { MutableRefObject } from "react";
 import { exportScene } from "@excalidraw/excalidraw";
 import debounce from "lodash/debounce";
 import { toast } from "sonner";
+import { translate } from "../../i18n";
 import * as api from "../../api";
 import { reloadAndReconcile } from "./reconcileSave";
 import { compressExcalidrawFiles } from "../../utils/imageCompression";
@@ -23,7 +24,7 @@ import {
 import type { UploadedFileRefs } from "./shared";
 
 class DrawingSaveConflictError extends Error {
-  constructor(message = "Drawing version conflict") {
+  constructor(message = translate("editor.save.versionConflict")) {
     super(message);
     this.name = "DrawingSaveConflictError";
   }
@@ -282,11 +283,11 @@ export const useEditorPersistence = ({
       );
     } catch (err) {
       if (err instanceof DrawingSaveConflictError) {
-        toast.error("Drawing changed in another tab. Refresh to load latest.");
+        toast.error(translate("editor.save.conflict"));
         throw err;
       }
       console.error("Failed to save drawing", err);
-      toast.error("Failed to save changes");
+      toast.error(translate("editor.save.failed"));
       throw err;
     }
   };
@@ -425,7 +426,7 @@ export const useEditorPersistence = ({
     } catch (err) {
       console.error("Failed to save library", err);
       if (api.isAxiosError(err) && err.response?.status === 401) return;
-      toast.error("Failed to save library");
+      toast.error(translate("editor.save.libraryFailed"));
     }
   };
 
@@ -493,7 +494,7 @@ export const useEditorPersistence = ({
       // in the broadcast throttle. A stale debounce must not replace this backup.
       debouncedSave.cancel();
       const editor = refs.excalidrawAPI.current;
-      if (!editor) throw new Error("Drawing is still loading");
+      if (!editor) throw new Error(translate("editor.save.stillLoading"));
       const finalLiveSave = enqueueSceneSave(
         drawingId,
         editor.getSceneElementsIncludingDeleted(),

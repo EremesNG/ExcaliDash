@@ -2,6 +2,8 @@ import { useCallback, useEffect } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import type { MutableRefObject } from "react";
 import { toast } from "sonner";
+import { translate } from "../../i18n";
+import { getApiErrorMessage } from "../../utils/getApiErrorMessage";
 import * as api from "../../api";
 import { rehydrateFilesProgressive } from "../../utils/rehydrateFiles";
 import { getPersistedAppState, hasRenderableElements } from "./shared";
@@ -245,19 +247,14 @@ export const useEditorSceneLoader = ({
       } catch (err) {
         if (cancelled) return;
         console.error("Failed to load drawing", err);
-        let message = "Failed to load drawing";
+        let message = translate("editor.load.failed");
         if (api.isAxiosError(err)) {
-          const responseMessage =
-            typeof err.response?.data?.message === "string"
-              ? err.response.data.message
-              : null;
-          if (responseMessage) {
-            message = responseMessage;
-          } else if (err.response?.status === 403) {
-            message = "You do not have access to this drawing";
-          } else if (err.response?.status === 404) {
-            message = "Drawing not found";
-          }
+          const fallback = err.response?.status === 403
+            ? translate("editor.load.accessDenied")
+            : err.response?.status === 404
+              ? translate("editor.load.notFound")
+              : message;
+          message = getApiErrorMessage(err, fallback);
           if (
             err.response?.status === 403 &&
             id &&

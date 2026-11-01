@@ -11,6 +11,7 @@ import { AdvancedSettings } from "../src/pages/settings/AdvancedSettings";
 import { SettingsRow } from "../src/pages/settings/SettingsRow";
 import viteConfig from "../vite.config";
 import frontendPackage from "../package.json";
+import { setCurrentLocale } from "../src/i18n";
 
 const state = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("../src/api/client", () => ({ api: { get: state.get } }));
@@ -109,6 +110,7 @@ afterEach(() => {
   act(() => renderer?.unmount());
   renderer = undefined;
   vi.unstubAllEnvs();
+  setCurrentLocale("en");
 });
 
 describe("Advanced settings — Excalidraw editor row", () => {
@@ -124,6 +126,15 @@ describe("Advanced settings — Excalidraw editor row", () => {
     await toggle(false);
     await toggle(true);
     expect(state.get).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps provider-less English text and UTC dates when utility callers use Spanish", async () => {
+    setCurrentLocale("es");
+    await openWith(editorStatus({
+      pinned: { ...pinned, releasedAt: "2026-10-27T00:30:00.000Z" },
+    }));
+    expect(textOf(editorRow())).toContain("Same build as excalidraw.com");
+    expect(textOf(editorRow())).toContain("Oct 27, 2026");
   });
 
   it("is placed right after the Version row", async () => {
@@ -223,7 +234,7 @@ describe("Advanced settings — Excalidraw editor row", () => {
     );
     expect(link.props.target).toBe("_blank");
     expect(link.props.rel).toBe("noopener noreferrer");
-    expect(link.props["aria-label"]).toContain("4ce8305");
+    expect(link.props["aria-label"]).toBe("Commit 4ce8305 on GitHub (opens in a new tab)");
     expect(textOf(link)).toBe("4ce8305");
   });
 

@@ -1,3 +1,5 @@
+import { plural, translate } from "../i18n";
+
 /**
  * S3-mode file rehydration.
  *
@@ -40,7 +42,7 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () =>
-      reject(reader.error ?? new Error("Failed to read blob"));
+      reject(reader.error ?? new Error(translate("importExport.image.readFailed")));
     reader.readAsDataURL(blob);
   });
 
@@ -154,7 +156,9 @@ export const rehydrateFilesForExport = async (
 
   if (unresolved.length > 0) {
     throw new Error(
-      `Could not bundle ${unresolved.length} drawing image(s): ${unresolved.join(", ")}`,
+      plural("importExport.export.bundleFailed", unresolved.length, {
+        files: unresolved.join(", "),
+      }),
     );
   }
   return hydrated;

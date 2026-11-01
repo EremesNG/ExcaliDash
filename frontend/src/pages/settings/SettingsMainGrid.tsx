@@ -18,6 +18,8 @@ import {
   settingsPrimaryButtonClass,
 } from "./SettingsRow";
 import { useLocale } from "../../context/useLocale";
+import { APP_LANGUAGES } from "../../i18n";
+import { formatNumber } from "../../locales/format";
 import {
   MIN_IMAGE_COMPRESSION_THRESHOLD_MB,
   MAX_IMAGE_COMPRESSION_THRESHOLD_MB,
@@ -63,7 +65,7 @@ export const SettingsMainGrid = ({
   onUpdateChannelChange,
   onCheckForUpdates,
 }: SettingsMainGridProps) => {
-  const { language, setLanguage, t } = useLocale();
+  const { language, setLanguage, t, locale } = useLocale();
 
   return (
     <SettingsCard>
@@ -78,10 +80,11 @@ export const SettingsMainGrid = ({
           onChange={(event) => setLanguage(event.target.value)}
           className="ui-input text-sm font-bold"
         >
-          <option value="en">English</option>
-          <option value="zh-CN">简体中文</option>
-          {language !== "en" && language !== "zh-CN" && (
-            <option value={language}>{language} (editor language)</option>
+          {APP_LANGUAGES.map(({ code, label }) => (
+            <option key={code} value={code}>{label}</option>
+          ))}
+          {!APP_LANGUAGES.some(({ code }) => code === language) && (
+            <option value={language}>{t("settings.language.editor", { language })}</option>
           )}
         </select>
       </SettingsRow>
@@ -89,57 +92,57 @@ export const SettingsMainGrid = ({
       <SettingsRow
         icon={theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
         tileClassName="border-black bg-amber-400 text-black dark:border-neutral-700 dark:bg-amber-400 dark:text-black"
-        title="Appearance"
+        title={t("settings.appearance.title")}
       >
         <PlayfulSwitch
           checked={theme === "dark"}
           onChange={() => toggleTheme()}
-          ariaLabel="Toggle dark mode"
+          ariaLabel={t("settings.appearance.toggle")}
         />
       </SettingsRow>
 
       <SettingsRow
         icon={editorAutoHide ? <EyeOff size={20} /> : <Eye size={20} />}
         tileClassName="border-black bg-cyan-400 text-black dark:border-neutral-700 dark:bg-cyan-400 dark:text-black"
-        title="Auto-hide editor header"
+        title={t("settings.header.title")}
         description={
-          editorAutoHide ? "Hide by default" : "Keep visible by default"
+          editorAutoHide ? t("settings.header.hidden") : t("settings.header.visible")
         }
       >
         <PlayfulSwitch
           checked={editorAutoHide}
           onChange={onEditorAutoHideChange}
-          ariaLabel="Toggle editor header auto-hide default"
+          ariaLabel={t("settings.header.toggle")}
         />
       </SettingsRow>
 
       <SettingsRow
         icon={<PanelLeft size={20} />}
         tileClassName="border-black bg-violet-400 text-black dark:border-neutral-700 dark:bg-violet-400 dark:text-black"
-        title="Compact sidebar"
-        description="Keep account actions in the avatar menu"
+        title={t("settings.sidebar.title")}
+        description={t("settings.sidebar.description")}
       >
         <PlayfulSwitch
           checked={compactSidebar}
           onChange={onCompactSidebarChange}
-          ariaLabel="Toggle compact sidebar"
+          ariaLabel={t("settings.sidebar.toggle")}
         />
       </SettingsRow>
 
       <SettingsRow
         icon={imageCompression ? <Zap size={20} /> : <ZapOff size={20} />}
         tileClassName="border-black bg-blue-400 text-black dark:border-neutral-700 dark:bg-blue-400 dark:text-black"
-        title="Optimized images"
+        title={t("settings.images.title")}
         description={
           imageCompression
-            ? `Compress images over ${imageCompressionThresholdMb} MB`
-            : "Original quality"
+            ? t("settings.images.compress", { size: formatNumber(imageCompressionThresholdMb, locale) })
+            : t("settings.images.original")
         }
       >
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-neutral-300">
             <input
-              aria-label="Image compression threshold in MB"
+              aria-label={t("settings.images.threshold")}
               type="number"
               min={MIN_IMAGE_COMPRESSION_THRESHOLD_MB}
               max={MAX_IMAGE_COMPRESSION_THRESHOLD_MB}
@@ -167,7 +170,7 @@ export const SettingsMainGrid = ({
           <PlayfulSwitch
             checked={imageCompression}
             onChange={() => toggleImageCompression()}
-            ariaLabel="Toggle image optimization"
+            ariaLabel={t("settings.images.toggle")}
           />
         </div>
       </SettingsRow>
@@ -175,10 +178,10 @@ export const SettingsMainGrid = ({
       <SettingsRow
         icon={<Archive size={20} />}
         tileClassName="border-black bg-indigo-400 text-black dark:border-neutral-700 dark:bg-indigo-400 dark:text-black"
-        title="Export backup"
+        title={t("settings.backup.exportTitle")}
       >
         <button onClick={exportBackup} className={settingsPrimaryButtonClass}>
-          Export
+          {t("settings.backup.export")}
         </button>
       </SettingsRow>
 

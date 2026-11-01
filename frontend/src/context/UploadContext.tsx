@@ -1,3 +1,4 @@
+import { translate } from "../i18n";
 import React, {
   createContext,
   useContext,
@@ -85,7 +86,7 @@ export const UploadProvider: React.FC<{ children: ReactNode }> = ({
         fileName: f.name,
         status: "error",
         progress: 0,
-        error: "Unsupported file type",
+        error: translate("importExport.upload.unsupported"),
       }));
 
       const supportedTasks: UploadTask[] = supportedFiles.map((f) => ({
@@ -130,7 +131,7 @@ export const UploadProvider: React.FC<{ children: ReactNode }> = ({
           if (t.status !== "error") {
             updateTask(t.id, {
               status: "error",
-              error: "Upload failed unexpectedly",
+              error: translate("importExport.upload.unexpected"),
             });
           }
         });

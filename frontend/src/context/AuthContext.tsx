@@ -1,3 +1,5 @@
+import { translate } from "../i18n";
+import { getApiErrorMessage } from "../utils/getApiErrorMessage";
 import React, {
   createContext,
   useContext,
@@ -148,7 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           return;
         }
         setAuthStatusError(
-          "Unable to reach the backend API. Check BACKEND_URL, FRONTEND_URL, and your reverse proxy configuration.",
+          translate("common.auth.backendUnreachable"),
         );
         setAuthEnabled(null);
         setRegistrationEnabled(false);
@@ -204,7 +206,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     } catch (error) {
       console.error("Failed to load user:", error);
       setAuthStatusError(
-        "Unable to initialize authentication state. Check backend/API connectivity and refresh.",
+        translate("common.auth.initializeFailed"),
       );
       localStorage.removeItem(USER_KEY);
       setUser(null);
@@ -288,7 +290,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       // Do not claim that the user signed out when the server session could
       // still be refreshed. This also avoids an enforced-OIDC redirect loop.
       console.error("Logout failed", error);
-      toast.error("Could not sign out. Please try again.");
+      toast.error(getApiErrorMessage(error, translate("common.auth.signOutFailed")));
       return;
     }
     suppressOidcAutoLogin();

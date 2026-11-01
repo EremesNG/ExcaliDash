@@ -9,6 +9,7 @@ import type {
 import { useAuth } from "../context/AuthContext";
 import { RoleSelect } from "./RoleSelect";
 import { UserAvatar } from "./UserAvatar";
+import { useLocale } from "../context/useLocale";
 
 type Props = {
   collectionId: string;
@@ -17,7 +18,18 @@ type Props = {
   onClose: () => void;
 };
 
-export const ShareCollectionModal: React.FC<Props> = ({isOpen,onClose}) => isOpen ? <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30" onClick={onClose}><section className="max-w-md rounded-xl bg-white p-6 dark:bg-neutral-900" onClick={e=>e.stopPropagation()}><h2 className="text-xl font-bold">Personal Site</h2><p className="my-4">Collections belong to your ChatGPT account. External sharing is unavailable in this private edition.</p><button onClick={onClose} className="rounded border px-4 py-2">Close</button></section></div> : null;
+export const ShareCollectionModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  const { t } = useLocale();
+  return isOpen ? (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30" onClick={onClose}>
+      <section className="max-w-md rounded-xl bg-white p-6 dark:bg-neutral-900" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold">{t("dashboard.share.personalSite")}</h2>
+        <p className="my-4">{t("dashboard.share.notice")}</p>
+        <button onClick={onClose} className="rounded border px-4 py-2">{t("dashboard.share.close")}</button>
+      </section>
+    </div>
+  ) : null;
+};
 
 export const UpstreamShareCollectionModal: React.FC<Props> = ({
   collectionId,

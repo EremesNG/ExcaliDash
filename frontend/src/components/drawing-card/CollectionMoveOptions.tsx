@@ -1,6 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import clsx from "clsx";
+import { useLocale } from "../../context/useLocale";
 import type { Collection } from "../../types";
 
 interface CollectionMoveOptionsProps {
@@ -26,6 +27,7 @@ export const CollectionMoveOptions: React.FC<CollectionMoveOptionsProps> = ({
   unselectedClassName,
   checkSize,
 }) => {
+  const { t } = useLocale();
   const moveToCollection = (collectionId: string | null) => {
     onMoveToCollection(drawingId, collectionId);
     onDone();
@@ -43,7 +45,7 @@ export const CollectionMoveOptions: React.FC<CollectionMoveOptionsProps> = ({
             : unselectedClassName,
         )}
       >
-        Unorganized {currentCollectionId === null && <Check size={checkSize} />}
+        {t("sidebar.unorganized")} {currentCollectionId === null && <Check size={checkSize} />}
       </button>
       {collections.map((collection) => (
         <button

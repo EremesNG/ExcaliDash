@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Logo className="w-10 h-10" />
             <span className="mt-1">ExcaliDash</span>
             <span className="mt-2 font-sans text-xs font-bold text-red-500">
-              Beta
+              {t("dashboard.shell.beta")}
             </span>
           </h1>
         </div>
@@ -181,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
                     placeholder={t("sidebar.newCollectionPlaceholder")}
-                    aria-label="Collection name"
+                    aria-label={t("dashboard.sidebar.collectionName")}
                     className="ui-input min-w-0 w-full py-1.5 font-medium"
                     onBlur={() => !newCollectionName && setIsCreating(false)}
                     onKeyDown={(event) => {
