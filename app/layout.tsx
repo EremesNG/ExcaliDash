@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ExcaliDash personal",
-  description: "Your personal ExcaliDash workspace.",
+  title: "ExcaliDash",
+  description: "ExcaliDash workspace for ChatGPT Sites.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

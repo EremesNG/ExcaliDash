@@ -13,7 +13,7 @@ vi.mock("react-router-dom", () => ({
   useNavigate: vi.fn(),
   useLocation: vi.fn(),
 }));
-vi.mock("@excalidraw/excalidraw", () => ({ exportToSvg: vi.fn() }));
+vi.mock("@excalidraw/excalidraw", () => ({ exportScene: vi.fn() }));
 vi.mock("../src/api", () => ({
   getDrawing: vi.fn(),
   updateDrawing: vi.fn(),
@@ -126,6 +126,24 @@ const mount = async (Harness: React.ComponentType) => {
   });
 };
 describe("conflict reconciliation", () => {
+  it.each([
+    ["stickynote", "baseHeight", 100, 140],
+    ["text", "baseFontSize", 20, 28],
+  ])(
+    "preserves a live %s %s edit made during a conflict reload",
+    async (type, field, before, after) => {
+      const original = element("local", 1, { type, [field]: before });
+      const edited = { ...original, [field]: after };
+      const h = makeHarness([original]);
+      const response = deferred<any>();
+      vi.mocked(api.getDrawing).mockReturnValueOnce(response.promise);
+      const read = reloadAndReconcile(h.refs, "drawing", [original], {});
+      h.setLive([edited]);
+      response.resolve({ version: 2, elements: [original], files: {} });
+      expect((await read)!.elements).toEqual([edited]);
+      expect(h.editor.getSceneElementsIncludingDeleted()).toEqual([edited]);
+    },
+  );
   it("keeps edits and peer additions received while the HTTP read is pending", async () => {
     const h = makeHarness();
     const response = deferred<any>();

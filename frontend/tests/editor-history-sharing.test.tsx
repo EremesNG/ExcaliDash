@@ -9,7 +9,7 @@ import { useEditorPersistence } from "../src/pages/editor/useEditorPersistence";
 import { useEditorCommands } from "../src/pages/editor/useEditorCommands";
 import { ShareModal as PersonalShareModal, UpstreamShareModal as ShareModal } from "../src/components/ShareModal";
 import * as api from "../src/api";
-import { exportToSvg } from "@excalidraw/excalidraw";
+import { exportScene } from "@excalidraw/excalidraw";
 import { saveDrawingKeepalive } from "../src/pages/editor/keepaliveSave";
 import type { DrawingSnapshotFull } from "../src/api";
 import { validateEmbeddableUrl } from "../src/pages/editor/shared";
@@ -39,7 +39,7 @@ vi.mock("@excalidraw/excalidraw", () => {
         Help: () => null,
       },
     }),
-    exportToSvg: vi.fn(async () => ({ outerHTML: "<svg />" })),
+    exportScene: vi.fn(async () => ({ outerHTML: "<svg />" })),
   };
 });
 vi.mock("../src/api", () => ({
@@ -261,6 +261,47 @@ const clickSnapshot = async (renderer: ReactTestRenderer) => {
   });
 };
 
+describe("persisted thumbnails", () => {
+  it.each([
+    [undefined, false],
+    ["#ffffff", false],
+    ["#123456", "#123456"],
+  ])(
+    "exports a light SVG with background %s without embedding the scene",
+    async (background, expected) => {
+      const h = persistenceHarness();
+      await render(<h.Harness />);
+      const appState = {
+        viewBackgroundColor: background,
+        exportWithDarkMode: true,
+        exportBackground: true,
+        exportEmbedScene: true,
+      };
+      await act(async () => {
+        await h.persistence.savePreviewRef.current!(
+          "drawing",
+          liveElements,
+          appState,
+          liveFiles,
+        );
+      });
+      expect(exportScene).toHaveBeenCalledWith({
+        type: "svg",
+        data: { elements: liveElements, appState, files: liveFiles },
+        config: {
+          padding: 10,
+          theme: "light",
+          canvasBackgroundColor: expected,
+          embedScene: false,
+        },
+      });
+      expect(api.updateDrawing).toHaveBeenCalledWith("drawing", {
+        preview: "<svg />",
+      });
+    },
+  );
+});
+
 describe("isolated history preview", () => {
   it("never exposes historical elements/files to pending autosaves, thumbnails, manual or unload saves", async () => {
     const h = persistenceHarness();
@@ -291,7 +332,7 @@ describe("isolated history preview", () => {
     expect(preview.props.viewModeEnabled).toBe(true);
     for (const callback of [
       "onChange",
-      "excalidrawAPI",
+      "onExcalidrawAPI",
       "onPointerUpdate",
       "onLibraryChange",
     ]) {
@@ -317,9 +358,16 @@ describe("isolated history preview", () => {
       expect(data.elements).toEqual(liveElements);
       expect(data.files ?? {}).not.toHaveProperty("oldImage");
     });
-    expect(exportToSvg).toHaveBeenCalledWith(
-      expect.objectContaining({ elements: liveElements, files: liveFiles }),
-    );
+    expect(exportScene).toHaveBeenCalledWith({
+      type: "svg",
+      data: { elements: liveElements, appState: liveAppState, files: liveFiles },
+      config: {
+        padding: 10,
+        theme: "light",
+        canvasBackgroundColor: false,
+        embedScene: false,
+      },
+    });
     expect(saveDrawingKeepalive).toHaveBeenCalledWith(
       "drawing",
       expect.objectContaining({ elements: liveElements, files: liveFiles }),

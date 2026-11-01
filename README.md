@@ -4,14 +4,17 @@ A Sites-oriented adaptation of [ExcaliDash](https://github.com/ZimengXiong/Excal
 with the original React/Excalidraw frontend, ChatGPT identity, Cloudflare D1 metadata,
 and R2 scene and image storage. This fork is independently maintained.
 
+[![ExcaliDash dashboard](upstream-docs/public/images/workspace.png)](https://excalidash.xyz)
+
 | Component | Current baseline |
 | --- | --- |
 | ExcaliDash | 0.6.7 (`0f9be2d8649be7650e6bee2844739c584fa76c35`) |
-| Excalidraw editor | 0.18.1, retained from upstream |
+| Excalidraw editor | `0.18.0-4ce8305`, excalidraw.com `release` build `4ce8305` (2026-10-27); pinned independently of ExcaliDash 0.6.7's `0.18.1` |
 | Sites runtime | Vinext build integration and Cloudflare Worker |
 
-The editor upgrade is a separate change. This baseline does not include Bucket Fill
-or the other tools introduced after Excalidraw 0.18.1.
+The pinned editor includes sticky notes, Bucket Fill and lasso selection.
+Settings → Advanced shows the bundled editor version and its comparison with
+excalidraw.com. See the [editor update procedure](docs/UPDATES.md#actualizar-el-editor-excalidraw).
 
 ## Features
 
@@ -30,16 +33,18 @@ is managed through Sites; granting someone access does not merge their data with
 
 ## Local setup
 
-Requires Node.js 24.22.1 or later, pnpm 11.25.0, and npm. Root and frontend use separate
-lockfiles so the original React 18 frontend stays independent from the Sites shell.
+Requires Node.js 24.22.1 or later, pnpm 11.25.0, and npm 10.9.2. Root and frontend
+use separate lockfiles so the original React 18 frontend stays independent from
+the Sites shell.
 
 ```sh
 corepack pnpm install --frozen-lockfile
-npm --prefix frontend ci
+npx -y npm@10.9.2 --prefix frontend ci
 npm run build
 npm run test:frontend
 npm run test:adapter
 npm run check:public-source
+npm run check:editor-upstream -- --offline
 ```
 
 If Corepack is unavailable, install the pinned pnpm version and run `pnpm install
@@ -62,7 +67,7 @@ normal reload behavior.
 | `db/`, `drizzle/` | Schema and append-only D1 migrations |
 | `scripts/` | Sites build integration, environment helpers and SPA preparation |
 | `upstream-backend/`, `upstream-docs/` | Original Node backend and docs, retained as reference |
-| `upstream.json` | Exact ExcaliDash upstream provenance and update policy |
+| `upstream.json` | Exact ExcaliDash and editor provenance and update policies |
 
 D1 stores users, preferences, collections, drawing metadata, history references,
 file references and short-lived collaboration events. R2 stores immutable scene
@@ -81,16 +86,20 @@ it does not provide a persistent Socket.IO server or WebSocket latency.
   40 MB expanded, up to 500 drawings, 500 collections and 1,000 ZIP entries.
 - Backups export current scenes with embedded images, not the complete version history.
   Import creates new IDs and merges data; account-wide import is not atomic.
+- Before publishing an editor update, export an `.excalidash` backup. Reverting to
+  an older editor is not lossless once drawings use new element types.
 - Direct SQLite database import requires exporting from upstream ExcaliDash first.
 - Scheduled backups, self-updates and object garbage collection are not implemented.
   Failed saves can leave unreferenced R2 objects.
 - Large backups remain subject to the Worker memory budget.
+- The adapter's only outbound request is a server-side check of
+  `https://excalidraw.com/version.json` to compare editor builds; no user data is sent.
 
 ## Reproducible source and deployment identity
 
 The tracked `.openai/hosting.json` declares logical `DB` and `BUCKET` bindings and
-contains no personal Site ID. Generated assets, runtime files, local databases,
-credentials and sample user screenshots are excluded. The build generates `public/`
+contains no Site-specific identifier. Generated assets, runtime files, local
+databases, credentials and sample user screenshots are excluded. The build generates `public/`
 and `server/spa-html.ts` from the retained frontend.
 
 GitHub is the reviewable source. Publishing still uses the Sites plugin's native

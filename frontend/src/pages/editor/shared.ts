@@ -1,4 +1,9 @@
-import { applyElementOrder, reconcileElements } from "../../utils/sync";
+import {
+  applyElementOrder,
+  getElementContentSig,
+  reconcileElements,
+} from "../../utils/sync";
+export { getElementContentSig } from "../../utils/sync";
 
 export interface ElementVersionInfo {
   version: number;
@@ -6,37 +11,6 @@ export interface ElementVersionInfo {
   updated: number;
   contentSig: string;
 }
-
-const toFiniteNumber = (value: any): number => {
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-};
-
-export const getElementContentSig = (element: any): string => {
-  if (!element || typeof element !== "object") return "";
-  const type = typeof element.type === "string" ? element.type : "";
-  const isDeleted = element.isDeleted ? "1" : "0";
-  const status = typeof element.status === "string" ? element.status : "";
-  const x = toFiniteNumber(element.x);
-  const y = toFiniteNumber(element.y);
-  const w = toFiniteNumber(element.width);
-  const h = toFiniteNumber(element.height);
-  const angle = toFiniteNumber(element.angle);
-  const fileId = typeof element.fileId === "string" ? element.fileId : "";
-  const text = typeof element.text === "string" ? element.text : "";
-  const textSig = text ? `t${text.length}:${text.slice(0, 64)}` : "";
-  let pointsSig = "";
-  if (Array.isArray(element.points)) {
-    const pts = element.points as any[];
-    const len = pts.length;
-    const last = len > 0 ? pts[len - 1] : null;
-    const lastX = Array.isArray(last) ? toFiniteNumber(last[0]) : 0;
-    const lastY = Array.isArray(last) ? toFiniteNumber(last[1]) : 0;
-    pointsSig = `p${len}:${lastX},${lastY}`;
-  }
-  return `${type}|${isDeleted}|${status}|${x}|${y}|${w}|${h}|${angle}|${pointsSig}|${fileId}|${textSig}`;
-};
 
 /**
  * Matches CaptureUpdateAction.{NEVER,IMMEDIATELY} from @excalidraw/excalidraw.
@@ -181,8 +155,8 @@ export const haveSameElements = (
     if (left.id !== right.id) return false;
     if ((left.version ?? 0) !== (right.version ?? 0)) return false;
     if ((left.versionNonce ?? 0) !== (right.versionNonce ?? 0)) return false;
-    // Some Excalidraw interactions (notably drag/resize) can update geometry while
-    // keeping version/versionNonce stable until commit; `updated` catches those frames.
+    // Live edits can keep revision metadata stable until commit. Compare content
+    // too, so the first edit isn't mistaken for an unchanged hydration snapshot.
     const leftUpdated =
       typeof left.updated === "number"
         ? left.updated
@@ -192,6 +166,7 @@ export const haveSameElements = (
         ? right.updated
         : Number(right.updated) || 0;
     if (leftUpdated !== rightUpdated) return false;
+    if (getElementContentSig(left) !== getElementContentSig(right)) return false;
   }
   return true;
 };

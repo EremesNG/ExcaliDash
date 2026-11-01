@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../src/api";
@@ -6,6 +6,8 @@ import { rehydrateFilesFromUrls } from "../src/utils/rehydrateFiles";
 import { getFilesDelta } from "../src/pages/editor/shared";
 import { useEditorCanvasHandlers } from "../src/pages/editor/useEditorCanvasHandlers";
 import { useEditorCollaboration } from "../src/pages/editor/useEditorCollaboration";
+import { useEditorBroadcast } from "../src/pages/editor/useEditorBroadcast";
+import { useEditorElementTracking } from "../src/pages/editor/useEditorElementTracking";
 const { sockets } = vi.hoisted(() => ({ sockets: [] as any[] }));
 vi.mock("@excalidraw/excalidraw", () => ({
   CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY" },
@@ -53,6 +55,71 @@ const deferred = <T,>() => {
   });
   return { promise, resolve };
 };
+type ElementEdit = [
+  name: string,
+  initial: Record<string, unknown>,
+  patch: Record<string, unknown>,
+];
+const changedFields: ElementEdit[] = [
+  ["sticky-note type", { type: "rectangle" }, { type: "stickynote" }],
+  [
+    "sticky-note baseHeight",
+    { type: "stickynote", baseHeight: 100 },
+    { baseHeight: 140 },
+  ],
+  ["text baseFontSize", { type: "text", baseFontSize: 20 }, { baseFontSize: 28 }],
+  ["creation time", { created: null }, { created: 1700000000000 }],
+  [
+    "bound-text labelPosition",
+    { type: "text", labelPosition: 0.5 },
+    { labelPosition: 0.75 },
+  ],
+  ["line polygon", { type: "line", polygon: false }, { polygon: true }],
+  [
+    "freedraw streamline",
+    { type: "freedraw", strokeOptions: { variability: "variable", streamline: 0.5 } },
+    { strokeOptions: { variability: "variable", streamline: 0.8 } },
+  ],
+  [
+    "freedraw variability",
+    { type: "freedraw", strokeOptions: { variability: "variable", streamline: 0.5 } },
+    { strokeOptions: { variability: "constant", streamline: 0.5 } },
+  ],
+  ...["startBinding", "endBinding"].flatMap((binding): ElementEdit[] => [
+    [
+      `${binding} mode`,
+      {
+        type: "arrow",
+        [binding]: { elementId: "target", fixedPoint: [0.5, 0], mode: "orbit" },
+      },
+      { [binding]: { elementId: "target", fixedPoint: [0.5, 0], mode: "inside" } },
+    ],
+    [
+      `${binding} fixedPoint`,
+      {
+        type: "arrow",
+        [binding]: { elementId: "target", fixedPoint: [0.5, 0], mode: "orbit" },
+      },
+      { [binding]: { elementId: "target", fixedPoint: [0.75, 0], mode: "orbit" } },
+    ],
+  ]),
+  ["fill color", { backgroundColor: "transparent" }, { backgroundColor: "#ff0000" }],
+  [
+    "interior point",
+    { type: "line", points: [[0, 0], [10, 10], [20, 0]] },
+    { points: [[0, 0], [10, 20], [20, 0]] },
+  ],
+  [
+    "long text suffix",
+    { type: "text", text: `${"a".repeat(64)}b` },
+    { text: `${"a".repeat(64)}c` },
+  ],
+  [
+    "custom data",
+    { customData: { plugin: { value: 1 } } },
+    { customData: { plugin: { value: 2 } } },
+  ],
+];
 const me = { id: "me", name: "Me", initials: "M", color: "red" };
 let renderer: ReactTestRenderer | undefined;
 let rafs: Map<number, FrameRequestCallback>;
@@ -105,6 +172,48 @@ const makeHarness = () => {
     },
   };
 };
+const makeBroadcastHarness = () => {
+  const socket = { emit: vi.fn() };
+  const save = vi.fn();
+  const lastOrderSig = ref("");
+  let tracking!: ReturnType<typeof useEditorElementTracking>;
+  let broadcast!: ReturnType<typeof useEditorBroadcast>;
+  function Harness() {
+    const nextTracking = useEditorElementTracking();
+    const nextBroadcast = useEditorBroadcast({
+      ...nextTracking,
+      drawingId: "drawing",
+      excalidrawAPI: ref(null),
+      lastLocalChangeAtRef: ref(0),
+      lastSyncedElementOrderSigRef: lastOrderSig,
+      lastSyncedFilesRef: ref({}),
+      latestAppStateRef: ref({}),
+      latestFilesRef: ref({}),
+      socketMeRef: ref(me),
+      socketRef: ref(socket),
+      uploadedRefs: ref({}),
+      debouncedSave: save,
+      debouncedSavePreview: vi.fn(),
+      normalizeImageElementStatus: (elements = []) => elements,
+      setHasSceneChangesSinceLoad: vi.fn(),
+    });
+    useLayoutEffect(() => {
+      tracking = nextTracking;
+      broadcast = nextBroadcast;
+    });
+    return null;
+  }
+  return {
+    Harness,
+    socket,
+    save,
+    record: (original: any) => {
+      tracking.recordElementVersion(original);
+      lastOrderSig.current = tracking.computeElementOrderSig([original]);
+    },
+    broadcast: (next: any) => broadcast([next], {}),
+  };
+};
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
@@ -144,7 +253,149 @@ const mount = async (Harness: React.ComponentType) => {
     renderer = create(<Harness />);
   });
 };
+describe("outgoing element changes", () => {
+  it("does not mistake the first sticky-note edit for an unchanged hydration snapshot", async () => {
+    const original = element("local", 1, { type: "stickynote", baseHeight: 100 });
+    const edited = { ...original, baseHeight: 140 };
+    const h = makeHarness();
+    const broadcast = vi.fn();
+    let change!: ReturnType<typeof useEditorCanvasHandlers>["handleCanvasChange"];
+    function HydratingHarness() {
+      const { handleCanvasChange } = useEditorCanvasHandlers({
+        canEdit: true,
+        drawingId: "drawing",
+        isReady: true,
+        debouncedSavePreview: vi.fn(),
+        emitFilesDeltaIfNeeded: () => false,
+        refs: {
+          excalidrawAPI: h.input.excalidrawAPI,
+          isSyncing: ref(false),
+          isUnmounting: ref(false),
+          hasHydratedInitialScene: ref(false),
+          hasSceneChangesSinceLoad: ref(false),
+          initialSceneElements: ref([original]),
+          isBootstrappingScene: ref(true),
+          lastLocalChangeAt: ref(0),
+          latestAppState: ref({}),
+          latestElements: h.refs.latestElementsRef,
+          latestFiles: h.refs.latestFilesRef,
+          debouncedSave: ref(null),
+          suspiciousBlankLoad: ref(false),
+        },
+        resolveSafeSnapshot: () => ({
+          prevented: false,
+          staleEmptySnapshot: false,
+          staleNonRenderableSnapshot: false,
+        }),
+        broadcastChanges: broadcast,
+      });
+      useLayoutEffect(() => {
+        change = handleCanvasChange;
+      });
+      return null;
+    }
+    await mount(HydratingHarness);
+    h.setLive([edited]);
+    await act(async () => change([edited], {}, {}));
+    expect(broadcast).toHaveBeenCalledWith([edited], {});
+  });
+  it("ignores object key order and absent optional JSON properties", async () => {
+    const h = makeBroadcastHarness();
+    await mount(h.Harness);
+    const original = element("local", 1, {
+      type: "arrow",
+      startBinding: { elementId: "target", fixedPoint: [0.5, 0], mode: "orbit" },
+      customData: { plugin: { enabled: true, count: 2 } },
+    });
+    h.record(original);
+    await act(async () => h.broadcast({
+      customData: { plugin: { count: 2, enabled: true } },
+      ...element("local", 1, {
+        type: "arrow",
+        startBinding: { mode: "orbit", fixedPoint: [0.5, 0], elementId: "target" },
+        labelPosition: undefined,
+      }),
+    }));
+    expect(h.socket.emit).not.toHaveBeenCalled();
+    expect(h.save).not.toHaveBeenCalled();
+  });
+  it("detects nested edits even when an element object is reused", async () => {
+    const h = makeBroadcastHarness();
+    await mount(h.Harness);
+    const original = { ...element("local", 1), customData: { plugin: { value: 1 } } };
+    h.record(original);
+    original.customData.plugin.value = 2;
+    await act(async () => h.broadcast(original));
+    expect(h.socket.emit).toHaveBeenCalledWith(
+      "element-update",
+      expect.objectContaining({ elements: [original] }),
+    );
+  });
+  it.each(["version", "versionNonce", "updated"])(
+    "still broadcasts a %s-only revision",
+    async (field) => {
+      const h = makeBroadcastHarness();
+      await mount(h.Harness);
+      const original = element("local", 1);
+      h.record(original);
+      const revised = { ...original, [field]: 2 };
+      await act(async () => h.broadcast(revised));
+      expect(h.socket.emit).toHaveBeenCalledWith(
+        "element-update",
+        expect.objectContaining({ elements: [revised] }),
+      );
+    },
+  );
+  it.each(changedFields)(
+    "broadcasts an equal-metadata edit to %s",
+    async (_name, initial, patch) => {
+      const h = makeBroadcastHarness();
+      await mount(h.Harness);
+      const original = element("local", 1, initial);
+      const edited = { ...original, ...patch };
+      h.record(original);
+      await act(async () => h.broadcast(edited));
+      expect(h.socket.emit).toHaveBeenCalledWith(
+        "element-update",
+        expect.objectContaining({ elements: [edited] }),
+      );
+      expect(h.save).toHaveBeenCalledWith("drawing", [edited], {}, {});
+    },
+  );
+});
 describe("remote collaboration staging", () => {
+  it("retains the local object when an equal remote element only reorders nested keys", async () => {
+    const h = makeHarness();
+    await mount(h.Harness);
+    const original = element("peer", 1, {
+      type: "freedraw",
+      strokeOptions: { variability: "variable", streamline: 0.5 },
+    });
+    h.setLive([original]);
+    sockets[0].handlers.get("element-update")({
+      elements: [{
+        ...original,
+        strokeOptions: { streamline: 0.5, variability: "variable" },
+      }],
+    });
+    await flushFrames();
+    expect(h.refs.latestElementsRef.current[0]).toBe(original);
+    expect(h.input.recordElementVersion).not.toHaveBeenCalled();
+  });
+  it.each(changedFields)(
+    "applies an equal-metadata remote edit to %s",
+    async (_name, initial, patch) => {
+      const h = makeHarness();
+      await mount(h.Harness);
+      const original = element("peer", 1, initial);
+      const edited = { ...original, ...patch };
+      h.setLive([original]);
+      sockets[0].handlers.get("element-update")({ elements: [original] });
+      sockets[0].handlers.get("element-update")({ elements: [edited] });
+      await flushFrames();
+      expect(h.refs.latestElementsRef.current).toEqual([edited]);
+    },
+  );
   it("keeps the newest delta when an older packet arrives before the animation flush", async () => {
     const h = makeHarness();
     await mount(h.Harness);

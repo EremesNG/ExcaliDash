@@ -26,12 +26,11 @@ export const useEditorElementTracking = () => {
       typeof element?.updated === "number"
         ? element.updated
         : Number(element?.updated) || 0;
-    const nextSig = getElementContentSig(element);
     return (
       previous.version !== nextVersion ||
       previous.versionNonce !== nextNonce ||
       previous.updated !== nextUpdated ||
-      previous.contentSig !== nextSig
+      previous.contentSig !== getElementContentSig(element)
     );
   }, []);
 

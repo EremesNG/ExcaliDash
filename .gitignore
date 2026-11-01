@@ -42,6 +42,13 @@ yarn-error.log*
 /outputs/
 /work/
 
+# Local agent skills (installed per developer; see skills-lock.json)
+/.agents/skills/
+/.claude/skills/
+
+# Local CodeGraph index
+/.codegraph/
+
 # OS metadata
 .DS_Store
 

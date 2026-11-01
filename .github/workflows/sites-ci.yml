@@ -19,6 +19,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npm --prefix frontend ci --no-audit --no-fund
       - run: npm run check:public-source
+      - run: npm run check:editor-upstream -- --offline
       - run: npm run build
       - run: node node_modules/typescript/bin/tsc --noEmit
       - run: node frontend/node_modules/typescript/bin/tsc -b frontend/tsconfig.json

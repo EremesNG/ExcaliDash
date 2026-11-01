@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type React from "react";
 import {
   ArchiveRestore,
@@ -6,6 +7,7 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
+import { EditorStatusRow } from "./EditorStatusRow";
 import { SettingsRow, settingsButtonClass } from "./SettingsRow";
 import { importLegacyFiles } from "../../utils/importUtils";
 
@@ -29,9 +31,13 @@ type AdvancedSettingsProps = {
   setImportSuccess: React.Dispatch<React.SetStateAction<SuccessDialogState>>;
 };
 
-export const AdvancedSettings = ({
+type AdvancedPanelProps = AdvancedSettingsProps & {
+  onToggle: React.ReactEventHandler<HTMLDetailsElement>;
+  editorRow: React.ReactNode;
+};
+
+const AdvancedPanel = ({
   authEnabled,
-  authMode,
   authToggleLoading,
   backupImportLoading,
   legacyDbImportLoading,
@@ -44,8 +50,13 @@ export const AdvancedSettings = ({
   confirmToggleAuthEnabled,
   setImportError,
   setImportSuccess,
-}: AdvancedSettingsProps) => (
-  <details className="group mt-10 overflow-hidden rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
+  onToggle,
+  editorRow,
+}: AdvancedPanelProps) => (
+  <details
+    onToggle={onToggle}
+    className="group mt-10 overflow-hidden rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]"
+  >
     <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-3.5 text-sm font-bold text-slate-800 dark:text-neutral-200 sm:px-5 sm:text-base">
       <ChevronRight
         size={16}
@@ -144,10 +155,16 @@ export const AdvancedSettings = ({
       <SettingsRow
         icon={<ShieldCheck size={20} />}
         tileClassName="border-black bg-slate-300 text-black dark:border-neutral-700 dark:bg-neutral-700 dark:text-white"
-        title={authEnabled ? "Authentication on" : "Authentication off"}
+        title={
+          isManagedAuthMode
+            ? "Authentication"
+            : authEnabled
+              ? "Authentication on"
+              : "Authentication off"
+        }
         description={
           isManagedAuthMode
-            ? `Managed by AUTH_MODE=${authMode}`
+            ? "Managed by ChatGPT Sites"
             : authEnabled
               ? user?.role === "ADMIN"
                 ? "Multi-user login enabled"
@@ -155,24 +172,25 @@ export const AdvancedSettings = ({
               : "Single-user mode"
         }
       >
-        <button
-          onClick={confirmToggleAuthEnabled}
-          disabled={
-            isManagedAuthMode ||
-            authEnabled === null ||
-            authToggleLoading ||
-            (authEnabled === true && user?.role !== "ADMIN")
-          }
-          className={settingsButtonClass}
-        >
-          {authToggleLoading
-            ? authEnabled
-              ? "Disabling…"
-              : "Enabling…"
-            : authEnabled
-              ? "Disable"
-              : "Enable"}
-        </button>
+        {isManagedAuthMode ? null : (
+          <button
+            onClick={confirmToggleAuthEnabled}
+            disabled={
+              authEnabled === null ||
+              authToggleLoading ||
+              (authEnabled === true && user?.role !== "ADMIN")
+            }
+            className={settingsButtonClass}
+          >
+            {authToggleLoading
+              ? authEnabled
+                ? "Disabling…"
+                : "Enabling…"
+              : authEnabled
+                ? "Disable"
+                : "Enable"}
+          </button>
+        )}
       </SettingsRow>
 
       <SettingsRow
@@ -191,6 +209,22 @@ export const AdvancedSettings = ({
           {appVersion}
         </span>
       </SettingsRow>
+
+      {editorRow}
     </div>
   </details>
 );
+
+export const AdvancedSettings = (props: AdvancedSettingsProps) => {
+  // The editor status is requested only once the panel has been opened.
+  const [opened, setOpened] = useState(false);
+  return (
+    <AdvancedPanel
+      {...props}
+      onToggle={(event) => {
+        if (event.currentTarget.open) setOpened(true);
+      }}
+      editorRow={<EditorStatusRow active={opened} />}
+    />
+  );
+};

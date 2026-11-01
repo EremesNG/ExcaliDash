@@ -5,7 +5,7 @@
  * base64 `data:` URL but a stored reference — either a same-origin
  * `/api/files/<drawingId>/<fileId>` redirect endpoint or a public S3 URL.
  * Excalidraw can sometimes render a raster `<img>` from such a URL, but SVG
- * image elements fail to render and, more importantly, `exportToSvg` embeds
+ * image elements fail to render and, more importantly, SVG export embeds
  * the bare reference as the `<image href>` so dashboard thumbnails lose every
  * image (the preview sanitizer drops non-`data:` hrefs).
  *
