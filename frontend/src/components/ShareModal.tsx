@@ -26,11 +26,14 @@ type Props = {
 };
 
 export const ShareModal: React.FC<Props> = ({
-  drawingId,
   isOpen,
   onClose,
-  anchorRef,
 }) => {
+  return isOpen ? createPortal(<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30" onClick={onClose}><section className="max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900" onClick={e=>e.stopPropagation()}><h2 className="text-xl font-bold">Personal Site</h2><p className="my-4">This app is private to your ChatGPT account. Open the same drawing in another signed-in session to sync changes. External share links are unavailable in this private edition.</p><button className="rounded border px-4 py-2" onClick={onClose}>Close</button></section></div>,document.body) : null;
+};
+
+// Retained upstream sharing UI for a future multi-user Sites edition.
+export const UpstreamShareModal: React.FC<Props> = ({drawingId,isOpen,onClose,anchorRef}) => {
   const [position, setPosition] = useState({ right: 12, top: 72 });
   useEffect(() => {
     if (!isOpen) return;

@@ -10,7 +10,7 @@ const { sockets } = vi.hoisted(() => ({ sockets: [] as any[] }));
 vi.mock("@excalidraw/excalidraw", () => ({
   CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY" },
 }));
-vi.mock("socket.io-client", () => ({
+vi.mock("../src/api/sitesSocket", () => ({
   io: vi.fn(() => {
     const handlers = new Map<string, (...args: any[]) => void>();
     const socket = {

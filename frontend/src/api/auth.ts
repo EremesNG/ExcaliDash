@@ -120,13 +120,9 @@ export const authStatus = async (): Promise<AuthStatusResponse> => {
 };
 
 export const startOidcSignIn = (returnTo?: string): void => {
-  const fallbackPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const requestedPath =
-    typeof returnTo === "string" && returnTo.startsWith("/")
-      ? returnTo
-      : fallbackPath;
-  const safeReturnTo = requestedPath.startsWith("/") ? requestedPath : "/";
-  window.location.href = `/api/auth/oidc/start?returnTo=${encodeURIComponent(safeReturnTo)}`;
+  const path = returnTo || `${window.location.pathname}${window.location.search}`;
+  const safe = path.startsWith('/') && !path.startsWith('//') ? path : '/';
+  window.top!.location.href = `/signin-with-chatgpt?return_to=${encodeURIComponent(safe)}`;
 };
 
 export const authMe = async (): Promise<{ user: AuthUser }> => {
@@ -163,7 +159,7 @@ export const authLogout = async (): Promise<{ oidcLogout: boolean }> => {
 };
 
 export const startOidcSignOut = (): void => {
-  window.location.assign(`${API_URL}/auth/oidc/logout`);
+  window.top!.location.href = "/signout-with-chatgpt?return_to=/";
 };
 
 export const authLogin = async (

@@ -7,7 +7,7 @@ import { HistoryPreviewCanvas } from "../src/pages/editor/HistoryPreviewCanvas";
 import { useEditorChrome } from "../src/pages/editor/useEditorChrome";
 import { useEditorPersistence } from "../src/pages/editor/useEditorPersistence";
 import { useEditorCommands } from "../src/pages/editor/useEditorCommands";
-import { ShareModal } from "../src/components/ShareModal";
+import { ShareModal as PersonalShareModal, UpstreamShareModal as ShareModal } from "../src/components/ShareModal";
 import * as api from "../src/api";
 import { exportToSvg } from "@excalidraw/excalidraw";
 import { saveDrawingKeepalive } from "../src/pages/editor/keepaliveSave";
@@ -613,7 +613,7 @@ describe("sharing placement and chrome", () => {
     expect(canvases[1].props.initialData.elements).toBe(
       historicalSnapshot.elements,
     );
-    const share = renderer.root.findByType(ShareModal);
+    const share = renderer.root.findByType(PersonalShareModal);
     expect(share.props.anchorRef).toBe(shareAnchor);
     expect(share.parent?.type).not.toBe("header");
     expect(renderer.root.findByType("header").props.className).toContain(

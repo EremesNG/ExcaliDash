@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
-import { io, type Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+import { io } from "../../api/sitesSocket";
 import { toast } from "sonner";
 import type { UserIdentity } from "../../utils/identity";
 import {

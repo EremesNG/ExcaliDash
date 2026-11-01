@@ -291,7 +291,7 @@ export const HistoryPanel: React.FC<Props> = ({
         {/* Footer */}
         <div className="border-t-2 border-slate-100 px-4 py-3 dark:border-neutral-800">
           <p className="text-center text-xs font-semibold text-slate-400 dark:text-neutral-500">
-            Versions are kept for 2 days
+            Versions are retained until the drawing is permanently deleted
           </p>
         </div>
       </div>
