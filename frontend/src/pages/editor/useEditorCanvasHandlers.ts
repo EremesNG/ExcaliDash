@@ -6,6 +6,7 @@ import {
   viewportCoordsToSceneCoords,
 } from "@excalidraw/excalidraw";
 import { toast } from "sonner";
+import { translate } from "../../i18n";
 import {
   getDroppedImageFiles,
   loadDroppedImageData,
@@ -213,7 +214,7 @@ export const useEditorCanvasHandlers = ({
         });
       } catch (err) {
         console.error("[Editor] Failed to import dropped images", err);
-        toast.error("Failed to import dropped images");
+        toast.error(translate("editor.drop.importFailed"));
       }
     },
     [canEdit, excalidrawAPIRef],

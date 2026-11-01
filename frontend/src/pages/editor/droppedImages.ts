@@ -1,3 +1,4 @@
+import { translate } from "../../i18n";
 import { compressDroppedImagePayload } from "../../utils/imageCompression";
 
 export const MULTI_IMAGE_DROP_GAP = 25;
@@ -32,10 +33,10 @@ const readFileAsDataURL = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () =>
-      reject(reader.error || new Error("Failed to read image file"));
+      reject(reader.error || new Error(translate("editor.drop.readFailed")));
     reader.onload = () => {
       if (typeof reader.result !== "string") {
-        reject(new Error("Failed to read image file"));
+        reject(new Error(translate("editor.drop.readFailed")));
         return;
       }
       resolve(reader.result);
@@ -61,7 +62,7 @@ const getImageDimensions = (
     };
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      reject(new Error("Failed to decode dropped image"));
+      reject(new Error(translate("editor.drop.decodeFailed")));
     };
     image.src = objectUrl;
   });

@@ -1,3 +1,4 @@
+import { useLocale } from "../context/useLocale";
 import React from "react";
 import clsx from "clsx";
 import { getInitialsFromName } from "../utils/user";
@@ -19,12 +20,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   name,
   size = "md",
   className,
-}) => (
-  <div
-    className={clsx("playful-avatar", sizeClasses[size], className)}
-    aria-label={`${name}'s profile picture`}
-    role="img"
-  >
-    {getInitialsFromName(name)}
-  </div>
-);
+}) => {
+  const { t } = useLocale();
+  return (
+    <div
+      className={clsx("playful-avatar", sizeClasses[size], className)}
+      aria-label={t("common.avatar.label", { name })}
+      role="img"
+    >
+      {getInitialsFromName(name)}
+    </div>
+  );
+};

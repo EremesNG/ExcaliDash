@@ -1,3 +1,4 @@
+import { useLocale } from "../../context/useLocale";
 import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { Excalidraw } from "@excalidraw/excalidraw";
@@ -13,10 +14,12 @@ export const HistoryPreviewCanvas = ({
   snapshot: DrawingSnapshotFull;
   theme: string;
   langCode: string;
-}) => (
+}) => {
+  const { t } = useLocale();
+  return (
   <div
     className="absolute inset-0 z-20"
-    aria-label="Historical drawing preview"
+    aria-label={t("editor.history.preview")}
   >
     {/* This canvas has no live API, onChange, upload, or socket callbacks.
         Keep the live canvas mounted underneath so pending saves and incoming
@@ -38,4 +41,5 @@ export const HistoryPreviewCanvas = ({
       validateEmbeddable={validateEmbeddableUrl}
     />
   </div>
-);
+  );
+};

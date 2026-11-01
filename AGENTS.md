@@ -19,6 +19,7 @@ resolve a concrete missing fact; do not reread the entire repository.
 | Task | Start here | Relevant code / checks |
 | --- | --- | --- |
 | SPA, editor, transport, upstream compatibility | [docs/ADAPTATION.md](docs/ADAPTATION.md) | `frontend/src/`, `frontend/tests/` |
+| UI text, language selection, localized errors | [docs/ADAPTATION.md#localización](docs/ADAPTATION.md#localización) | `frontend/src/locales/`, `frontend/src/i18n.ts`, `server/error-codes.ts`, `frontend/tests/i18n*.test.tsx` |
 | API, identity, ownership, persistence | [docs/ADAPTATION.md](docs/ADAPTATION.md) | `worker/index.ts`, `server/api.ts`, `db/`, `tests/adapter.integration.mjs` |
 | Build, preview, migrations, publishing | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | `scripts/`, `vite.config.ts`, `drizzle/`, `.openai/hosting.json` |
 | Original upstream behavior | [upstream-docs/](upstream-docs/) | `upstream-backend/` is reference-only; check current adapter behavior separately |
@@ -176,6 +177,12 @@ do not run builds or migrations merely to discover their behavior.
 
 - Match surrounding formatting; there is no Prettier configuration to apply.
 - Use PascalCase for components and `use*` names for hooks.
+- New Sites UI text needs `en` and `es` keys in the relevant
+  `frontend/src/locales/` area module and a focused test; TypeScript enforces Spanish
+  completeness. Follow the dictionary convention in [ADAPTATION.md](docs/ADAPTATION.md#localización).
+- New adapter error text needs a stable code in `server/error-codes.ts` and matching
+  translations in `frontend/src/locales/errors.ts`; cover the response in
+  `tests/adapter.integration.mjs`.
 - Both root and frontend TypeScript are strict; frontend also checks unused locals
   and parameters. Root `@/*` imports resolve from the repository root.
 - Root rules live in `eslint.config.mjs` (Next core-web-vitals and TypeScript),

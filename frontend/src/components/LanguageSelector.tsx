@@ -1,5 +1,6 @@
+import { useLocale } from "../context/useLocale";
 import React from "react";
-import { languages, useI18n } from "@excalidraw/excalidraw";
+import { languages } from "@excalidraw/excalidraw";
 
 const STORAGE_KEY = "excalidash-lang";
 
@@ -28,15 +29,12 @@ interface LanguageSelectorProps {
   onChange: (code: string) => void;
 }
 
-/**
- * Language selector rendered inside <Excalidraw> children so that `useI18n`
- * can access the Excalidraw i18n context.
- */
+/** Keep the control label in the app locale and language names from Excalidraw. */
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   langCode,
   onChange,
 }) => {
-  const { t } = useI18n();
+  const { t } = useLocale();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     // Persistence (localStorage mirror + server sync) is owned by the shared
@@ -55,7 +53,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       }}
     >
       <span style={{ fontSize: 13, flexShrink: 0 }}>
-        {t("labels.language", null, "Language")}
+        {t("common.language.label")}
       </span>
       <select
         value={langCode}
@@ -70,7 +68,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           color: "var(--color-on-surface)",
           cursor: "pointer",
         }}
-        aria-label={t("labels.language", null, "Language")}
+        aria-label={t("common.language.label")}
       >
         {languages.map((lang) => (
           <option key={lang.code} value={lang.code}>

@@ -3,51 +3,56 @@ import clsx from "clsx";
 import { AlertTriangle, Folder, Inbox, Loader2, Trash2 } from "lucide-react";
 import { DrawingCard } from "../../components/DrawingCard";
 import type { Collection, DrawingSummary } from "../../types";
+import { useLocale } from "../../context/useLocale";
+import { formatNumber } from "../../locales/format";
 
 type DragPreviewProps = {
   drawings: DrawingSummary[];
 };
 
-export const DragPreview: React.FC<DragPreviewProps> = ({ drawings }) => (
-  <div
-    id="drag-preview"
-    className="fixed top-[-1000px] left-[-1000px] w-[160px] aspect-[16/10] pointer-events-none"
-  >
-    {drawings.length > 0 && (
-      <div className="relative w-full h-full">
-        {drawings.slice(0, 3).map((drawing, index) => (
-          <div
-            key={drawing.id}
-            className="absolute inset-0 bg-slate-50 dark:bg-neutral-900 border-2 border-slate-800 dark:border-neutral-700 rounded-xl shadow-sm flex items-center justify-center overflow-hidden"
-            style={{
-              transform: `translate(${index * 4}px, ${index * 4}px)`,
-              zIndex: 3 - index,
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            <div className="absolute inset-0 opacity-[0.3] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] [background-size:24px_24px]" />
-            {drawing.preview ? (
-              <div
-                className="drawing-preview w-full h-full p-2 flex items-center justify-center [&>svg]:w-auto [&>svg]:h-auto [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:drop-shadow-sm relative z-10"
-                dangerouslySetInnerHTML={{ __html: drawing.preview }}
-              />
-            ) : (
-              <div className="text-slate-300 dark:text-neutral-600 relative z-10">
-                <Folder size={24} />
-              </div>
-            )}
-          </div>
-        ))}
-        {drawings.length > 1 && (
-          <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-50">
-            {drawings.length}
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-);
+export const DragPreview: React.FC<DragPreviewProps> = ({ drawings }) => {
+  const { locale } = useLocale();
+  return (
+    <div
+      id="drag-preview"
+      className="fixed top-[-1000px] left-[-1000px] w-[160px] aspect-[16/10] pointer-events-none"
+    >
+      {drawings.length > 0 && (
+        <div className="relative w-full h-full">
+          {drawings.slice(0, 3).map((drawing, index) => (
+            <div
+              key={drawing.id}
+              className="absolute inset-0 bg-slate-50 dark:bg-neutral-900 border-2 border-slate-800 dark:border-neutral-700 rounded-xl shadow-sm flex items-center justify-center overflow-hidden"
+              style={{
+                transform: `translate(${index * 4}px, ${index * 4}px)`,
+                zIndex: 3 - index,
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <div className="absolute inset-0 opacity-[0.3] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] [background-size:24px_24px]" />
+              {drawing.preview ? (
+                <div
+                  className="drawing-preview w-full h-full p-2 flex items-center justify-center [&>svg]:w-auto [&>svg]:h-auto [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:drop-shadow-sm relative z-10"
+                  dangerouslySetInnerHTML={{ __html: drawing.preview }}
+                />
+              ) : (
+                <div className="text-slate-300 dark:text-neutral-600 relative z-10">
+                  <Folder size={24} />
+                </div>
+              )}
+            </div>
+          ))}
+          {drawings.length > 1 && (
+            <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-50">
+              {formatNumber(drawings.length, locale)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 type ViewerActionToastProps = {
   message: string | null;
@@ -80,21 +85,23 @@ type FileDropOverlayProps = {
 
 export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
   viewTitle,
-}) => (
-  <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm border-4 border-dashed border-indigo-400 rounded-3xl flex flex-col items-center justify-center animate-in fade-in duration-200">
-    <div className="bg-indigo-50 p-6 sm:p-8 rounded-full mb-5 sm:mb-6 shadow-sm">
-      <Inbox size={56} className="text-indigo-600 hidden sm:block" />
-      <Inbox size={44} className="text-indigo-600 sm:hidden" />
+}) => {
+  const { t } = useLocale();
+  return (
+    <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm border-4 border-dashed border-indigo-400 rounded-3xl flex flex-col items-center justify-center animate-in fade-in duration-200">
+      <div className="bg-indigo-50 p-6 sm:p-8 rounded-full mb-5 sm:mb-6 shadow-sm">
+        <Inbox size={56} className="text-indigo-600 hidden sm:block" />
+        <Inbox size={44} className="text-indigo-600 sm:hidden" />
+      </div>
+      <h3 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 text-center px-4">
+        {t("dashboard.import.dropTitle")}
+      </h3>
+      <p className="text-slate-500 text-base sm:text-lg max-w-sm sm:max-w-md text-center px-4">
+        {t("dashboard.import.dropDescription", { name: viewTitle })}
+      </p>
     </div>
-    <h3 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 text-center px-4">
-      Drop files to import
-    </h3>
-    <p className="text-slate-500 text-base sm:text-lg max-w-sm sm:max-w-md text-center px-4">
-      Drop .excalidash files here to import them into
-      <span className="font-bold text-indigo-600 mx-1">{viewTitle}</span>
-    </p>
-  </div>
-);
+  );
+};
 
 type DrawingsGridProps = {
   drawings: DrawingSummary[];
@@ -143,15 +150,16 @@ export const DrawingsGrid: React.FC<DrawingsGridProps> = ({
   onDragStart,
   onPreviewGenerated,
 }) => {
+  const { t } = useLocale();
   if (isLoading && drawings.length === 0) {
     return (
       <div
         className="flex justify-center items-center h-64 text-indigo-600"
         role="status"
-        aria-label="Loading drawings"
+        aria-label={t("dashboard.grid.loading")}
       >
         <Loader2 size={32} className="animate-spin" />
-        <span className="sr-only">Loading drawings</span>
+        <span className="sr-only">{t("dashboard.grid.loading")}</span>
       </div>
     );
   }
@@ -177,13 +185,13 @@ export const DrawingsGrid: React.FC<DrawingsGridProps> = ({
             )}
           </div>
           <p className="text-lg font-semibold text-slate-600 dark:text-slate-400">
-            {isTrashView ? "Your trash is empty" : "No drawings found"}
+            {isTrashView ? t("dashboard.grid.emptyTrash") : t("dashboard.grid.empty")}
           </p>
           {!isTrashView && (
             <p className="text-sm mt-2 text-slate-400 dark:text-neutral-500 max-w-xs text-center">
               {search
-                ? `No results for "${search}"`
-                : "Create a new drawing to get started!"}
+                ? t("dashboard.grid.searchEmpty", { search })
+                : t("dashboard.grid.createHint")}
             </p>
           )}
           {search && (
@@ -191,7 +199,7 @@ export const DrawingsGrid: React.FC<DrawingsGridProps> = ({
               onClick={onClearSearch}
               className="ui-button-secondary mt-4"
             >
-              Clear search
+              {t("dashboard.grid.clearSearch")}
             </button>
           )}
         </div>

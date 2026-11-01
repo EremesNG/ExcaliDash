@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import * as api from "../api";
 import { useAuth } from "../context/AuthContext";
+import { useLocale } from "../context/useLocale";
 import { GeneralAccessSection } from "./share-modal/GeneralAccessSection";
 import { SharePeopleSection } from "./share-modal/SharePeopleSection";
 import {
@@ -29,7 +30,8 @@ export const ShareModal: React.FC<Props> = ({
   isOpen,
   onClose,
 }) => {
-  return isOpen ? createPortal(<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30" onClick={onClose}><section className="max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900" onClick={e=>e.stopPropagation()}><h2 className="text-xl font-bold">Personal Site</h2><p className="my-4">This app is private to your ChatGPT account. Open the same drawing in another signed-in session to sync changes. External share links are unavailable in this private edition.</p><button className="rounded border px-4 py-2" onClick={onClose}>Close</button></section></div>,document.body) : null;
+  const { t } = useLocale();
+  return isOpen ? createPortal(<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30" onClick={onClose}><section className="max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-neutral-900" onClick={e=>e.stopPropagation()}><h2 className="text-xl font-bold">{t("editor.share.title")}</h2><p className="my-4">{t("editor.share.notice")}</p><button className="rounded border px-4 py-2" onClick={onClose}>{t("editor.share.close")}</button></section></div>,document.body) : null;
 };
 
 // Retained upstream sharing UI for a future multi-user Sites edition.

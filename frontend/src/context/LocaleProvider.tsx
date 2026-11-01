@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-import { resolveLocale, translate } from "../i18n";
-import { LocaleContext } from "./localeContext";
+import React, { useEffect, useMemo } from "react";
+import { setCurrentLocale } from "../i18n";
+import { createLocaleValue, LocaleContext } from "./localeContext";
 import { usePreference } from "./PreferencesContext";
 
 export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -9,21 +9,20 @@ export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({
   const defaultLanguage =
     typeof navigator === "undefined" ? "en" : navigator.language;
   const [language, setLanguage] = usePreference("language", defaultLanguage);
-  const locale = resolveLocale(language);
+  const value = useMemo(
+    () => createLocaleValue(language, setLanguage),
+    [language, setLanguage],
+  );
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    setCurrentLocale(value.locale);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = value.locale;
+    }
+  }, [value.locale]);
 
   return (
-    <LocaleContext.Provider
-      value={{
-        locale,
-        language,
-        setLanguage,
-        t: (key) => translate(locale, key),
-      }}
-    >
+    <LocaleContext.Provider value={value}>
       {children}
     </LocaleContext.Provider>
   );

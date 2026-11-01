@@ -43,6 +43,56 @@ la cuenta personal en varias sesiones; no se afirma colaboración pública multi
 El historial se conserva hasta borrar permanentemente el dibujo. Los respaldos
 compatibles con upstream contienen el estado actual, no todo el historial.
 
+## Localización
+
+La interfaz admite inglés (`en`), español y chino (`zh-CN`, traducción parcial con
+respaldo en inglés). En la primera visita se usa `navigator.language`; una
+preferencia guardada tiene prioridad. `PreferencesContext` mantiene la preferencia
+`language` en localStorage y la sincroniza con `/api/auth/preferences`. Settings
+ofrece English, Español y 中文 mediante `APP_LANGUAGES`: elegir Español guarda
+`es-ES`, compatible con el `langCode` de Excalidraw. `resolveLocale` lo convierte en
+`es` para la aplicación; ambos comparten la misma preferencia.
+`frontend/src/context/LocaleProvider.tsx` actualiza `<html lang>` al idioma resuelto.
+
+`frontend/src/i18n.ts` reúne los módulos de `frontend/src/locales/`: `common.ts`,
+`dashboard.ts`, `editor.ts`, `settings.ts`, `importExport.ts` y `errors.ts`. Cada
+módulo exporta mapas planos: `en` define las claves, `es` tiene el tipo
+`Record<keyof typeof en, string>` y `zhCN` es parcial. TypeScript falla si falta una
+clave española; las claves chinas ausentes usan el texto inglés. Las claves nuevas
+siguen `area.feature.label`; se conservan las claves heredadas `sidebar.*`.
+Todo texto nuevo de la interfaz Sites necesita claves en inglés y español y una
+prueba. Los valores admiten interpolación `{name}`; los plurales definen
+`<base>.one` y `<base>.other`, seleccionados por `Intl.PluralRules`.
+
+El hook `useLocale()` devuelve `{ locale, language, setLanguage, t, plural }`.
+Fuera de React, o en proveedores por encima de `LocaleProvider`, están disponibles
+`translate`, `plural` y `getCurrentLocale` desde `frontend/src/i18n.ts`.
+`frontend/src/locales/format.ts` centraliza fechas, tiempo relativo, números,
+porcentajes, tamaños en bytes y la selección de locale de date-fns. Para pruebas,
+`LocaleTestProvider` en `frontend/tests/helpers/locale.tsx` permite elegir idioma;
+los componentes sin proveedor usan inglés.
+
+Los errores del adaptador devuelven `{ error, code }` sin cambiar el texto inglés
+de `error` ni el estado HTTP. El catálogo central de 49 códigos está en
+`server/error-codes.ts`; el serializador de `server/api.ts` lo aplica por texto
+exacto. Todo error nuevo debe añadir su código a ese catálogo (el tipo
+`ApiErrorMessage` impide compilar textos no catalogados) y sus traducciones
+`errors.<CODE>` a `frontend/src/locales/errors.ts`.
+`frontend/src/utils/getApiErrorMessage.ts` traduce por `code`; si falta o no se
+reconoce, conserva el texto del servidor. Su variante `getApiErrorMessageAsync`
+decodifica los cuerpos JSON recibidos como Blob, como en la exportación de
+respaldos. `tests/adapter.integration.mjs` comprueba los códigos y los contratos de
+error; `frontend/tests/i18n*.test.tsx` cubre la localización.
+
+El alcance incluye Dashboard, los controles propios alrededor del editor,
+Settings (incluido Advanced), las partes visibles de Profile, importación,
+exportación, subidas y avisos de compartir accesibles en Sites. La interfaz
+interna de Excalidraw usa su locale `es-ES`. Quedan fuera el acceso/registro y
+restablecimiento de contraseña locales, Admin, API keys, gestión S3 y los cuerpos
+inactivos de compartir de upstream. No se traducen los nombres creados por el
+servidor (`"Untitled Drawing"`, `" (copy)"`), el contenido del usuario ni los nombres
+de producto.
+
 ## Editor Excalidraw
 
 El editor se fija exactamente a `@excalidraw/excalidraw@0.18.0-4ce8305`, build de

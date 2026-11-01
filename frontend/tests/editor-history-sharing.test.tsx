@@ -661,6 +661,10 @@ describe("sharing placement and chrome", () => {
     expect(canvases[1].props.initialData.elements).toBe(
       historicalSnapshot.elements,
     );
+    // Provider-less editor chrome keeps the English fallback for existing callers.
+    expect(renderer.root.findByProps({ title: "Version History" })).toBeTruthy();
+    expect(renderer.root.findByProps({ "aria-label": "Historical drawing preview" })).toBeTruthy();
+    expect(renderer.root.findByType("h2").children).toEqual(["Personal Site"]);
     const share = renderer.root.findByType(PersonalShareModal);
     expect(share.props.anchorRef).toBe(shareAnchor);
     expect(share.parent?.type).not.toBe("header");

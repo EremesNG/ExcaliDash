@@ -1,3 +1,5 @@
+import { translate } from "../i18n";
+import { getApiErrorMessage } from "./getApiErrorMessage";
 import { exportScene } from "@excalidraw/excalidraw";
 import { api } from "../api";
 
@@ -38,6 +40,14 @@ export const isLegacyExportJson = (data: unknown): data is LegacyExportJson => {
   if (typeof data !== "object" || data === null) return false;
   const maybe = data as Record<string, unknown>;
   return Array.isArray(maybe.drawings);
+};
+
+export const parseImportJson = (text: string, filename: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(translate("importExport.import.invalidJson", { filename }));
+  }
 };
 
 export const coerceTimestamp = (value: unknown): number => {
@@ -146,7 +156,12 @@ export const importLegacyZip = async (
   let success = 0;
   let failed = 0;
   const { default: JSZip } = await import("jszip");
-  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  let zip;
+  try {
+    zip = await JSZip.loadAsync(await file.arrayBuffer());
+  } catch {
+    throw new Error(translate("importExport.archive.invalid"));
+  }
   const entries = Object.values(zip.files).filter((e: any) => !e.dir);
   const hasExcalidashManifest = entries.some(
     (e: any) => e.name === "excalidash.manifest.json",
@@ -156,7 +171,10 @@ export const importLegacyZip = async (
       success: 0,
       failed: 1,
       errors: [
-        `${file.name}: This looks like an ExcaliDash backup (.excalidash). Use "Import Backup" instead of Legacy Import.`,
+        translate("importExport.import.fileError", {
+          filename: file.name,
+          error: translate("importExport.archive.useBackup"),
+        }),
       ],
     };
   }
@@ -169,19 +187,19 @@ export const importLegacyZip = async (
     return {
       success: 0,
       failed: 1,
-      errors: [`${file.name}: Zip contains no .excalidraw/.json drawings.`],
+      errors: [
+        translate("importExport.import.fileError", {
+          filename: file.name,
+          error: translate("importExport.archive.noDrawings"),
+        }),
+      ],
     };
   }
   for (const entry of drawableEntries) {
     const entryName = String((entry as any).name || "");
     try {
       const raw = await (entry as any).async("string");
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        throw new Error(`Invalid JSON: ${entryName}`);
-      }
+      const parsed = parseImportJson(raw, entryName);
       if (isLegacyExportJson(parsed)) {
         const exportJson = parsed;
         const drawings = Array.isArray(exportJson.drawings)
@@ -193,7 +211,12 @@ export const importLegacyZip = async (
           if (!extracted) {
             failed += 1;
             errors.push(
-              `${file.name}:${entryName}: drawing ${i + 1}: Invalid structure (missing elements/appState)`,
+              translate("importExport.archive.drawingError", {
+                archive: file.name,
+                entry: entryName,
+                index: i + 1,
+                error: translate("importExport.legacy.invalidStructure"),
+              }),
             );
             continue;
           }
@@ -219,7 +242,9 @@ export const importLegacyZip = async (
             name:
               typeof d.name === "string" && d.name.trim().length > 0
                 ? d.name
-                : `Imported Drawing ${i + 1}`,
+                : translate("importExport.legacy.importedDrawing", {
+                    index: i + 1,
+                  }),
             elements: extracted.elements,
             appState: extracted.appState,
             files: extracted.files || null,
@@ -236,8 +261,11 @@ export const importLegacyZip = async (
         continue;
       }
       const extracted = extractDrawingData(parsed);
-      if (!extracted)
-        throw new Error(`Invalid drawing structure: ${entryName}`);
+      if (!extracted) {
+        throw new Error(translate("importExport.archive.invalidDrawing", {
+          filename: entryName,
+        }));
+      }
       let collectionId: string | null = null;
       if (targetCollectionId !== null) collectionId = targetCollectionId;
       else {
@@ -256,7 +284,7 @@ export const importLegacyZip = async (
         name:
           basenameWithoutExt(entryName) ||
           basenameWithoutExt(file.name) ||
-          "Imported Drawing",
+          translate("importExport.legacy.defaultDrawing"),
         elements: extracted.elements,
         appState: extracted.appState,
         files: extracted.files || null,
@@ -269,10 +297,17 @@ export const importLegacyZip = async (
         headers: { "X-Imported-File": "true" },
       });
       success += 1;
-    } catch (err: any) {
+    } catch (err) {
       failed += 1;
       errors.push(
-        `${file.name}:${entryName}: ${err?.message || "Failed to import zip entry"}`,
+        translate("importExport.archive.entryError", {
+          archive: file.name,
+          entry: entryName,
+          error: getApiErrorMessage(
+            err,
+            translate("importExport.archive.entryFailed"),
+          ),
+        }),
       );
     }
   }

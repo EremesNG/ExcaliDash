@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Collection, DrawingSummary } from "../../types";
 import { CollectionMoveOptions } from "./CollectionMoveOptions";
+import { useLocale } from "../../context/useLocale";
 
 interface DrawingCardContextMenuProps {
   drawing: DrawingSummary;
@@ -57,6 +58,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
   onManageStorage,
   onExport,
 }) => {
+  const { t } = useLocale();
   const closeTimer = useRef<number | null>(null);
 
   const openSubmenu = () => {
@@ -100,7 +102,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
           drawing.accessLevel === "edit" ||
           drawing.accessLevel === "owner") ? (
           <button onClick={onRename} className="ui-menu-item">
-            <PenTool size={14} /> Rename
+            <PenTool size={14} /> {t("dashboard.card.rename")}
           </button>
         ) : null}
         {!isShared ? (
@@ -111,7 +113,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
           >
             <button className="ui-menu-item justify-between">
               <span className="flex items-center gap-2">
-                <FolderInput size={14} /> Move to...
+                <FolderInput size={14} /> {t("dashboard.card.moveTo")}
               </span>
               <ArrowRight size={12} />
             </button>
@@ -154,7 +156,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
               }}
               className="ui-menu-item"
             >
-              <Copy size={14} /> Duplicate
+              <Copy size={14} /> {t("dashboard.card.duplicate")}
             </button>
           </>
         ) : null}
@@ -176,7 +178,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
           ) : (
             <Download size={14} />
           )}
-          {isExporting ? "Exporting..." : "Export"}
+          {isExporting ? t("dashboard.card.exporting") : t("dashboard.card.export")}
         </button>
         {exportError && (
           <div className="mx-1 my-1 rounded-lg border-2 border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-400">
@@ -193,7 +195,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
               }}
               className="ui-menu-item ui-menu-item-danger"
             >
-              <Trash2 size={14} /> Delete
+              <Trash2 size={14} /> {t("dashboard.card.delete")}
             </button>
           </>
         ) : null}
@@ -207,7 +209,7 @@ export const DrawingCardContextMenu: React.FC<DrawingCardContextMenuProps> = ({
               }}
               className="ui-menu-item"
             >
-              <EyeOff size={14} /> Hide from my list
+              <EyeOff size={14} /> {t("dashboard.card.hide")}
             </button>
           </>
         ) : null}

@@ -7,6 +7,7 @@ import type { Collection } from "../types";
 import { Save } from "lucide-react";
 import { displayFontFamily } from "../utils/displayFont";
 import { PasswordCard } from "./profile/PasswordCard";
+import { useLocale } from "../context/useLocale";
 import { getApiErrorMessage } from "../utils/getApiErrorMessage";
 import { UserAvatar } from "../components/UserAvatar";
 import {
@@ -17,6 +18,7 @@ import {
 } from "./settings/SettingsRow";
 
 export const Profile: React.FC = () => {
+  const { t } = useLocale();
   const {
     user: authUser,
     logout,
@@ -83,7 +85,7 @@ export const Profile: React.FC = () => {
       return;
     }
     if (!name.trim()) {
-      setError("Name cannot be empty");
+      setError(t("settings.profile.emptyName"));
       return;
     }
 
@@ -101,12 +103,12 @@ export const Profile: React.FC = () => {
           updatedAt: string;
         };
       }>("/auth/profile", { name: name.trim() });
-      setSuccess("Name updated successfully");
+      setSuccess(t("settings.profile.nameUpdated"));
       if (response.data?.user) {
         updateUser(response.data.user);
       }
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to update name"));
+      setError(getApiErrorMessage(err, t("settings.profile.nameFailed")));
     } finally {
       setLoading(false);
     }
@@ -170,7 +172,7 @@ export const Profile: React.FC = () => {
           className="text-3xl sm:text-5xl mb-6 sm:mb-8 text-slate-900 dark:text-white pl-1"
           style={{ fontFamily: displayFontFamily }}
         >
-          Profile
+          {t("settings.profile.title")}
         </h1>
 
         {success && (
@@ -210,12 +212,12 @@ export const Profile: React.FC = () => {
                       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                         <input
                           id="name"
-                          aria-label="Display name"
+                          aria-label={t("settings.profile.displayName")}
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           className={`${settingsSelectClass} min-w-40 flex-1`}
-                          placeholder="Your name"
+                          placeholder={t("settings.profile.namePlaceholder")}
                         />
                         <button
                           onClick={handleUpdateName}
@@ -228,7 +230,7 @@ export const Profile: React.FC = () => {
                           className={settingsPrimaryButtonClass}
                         >
                           <Save size={14} />
-                          Save
+                          {t("settings.profile.save")}
                         </button>
                       </div>
                     </div>
@@ -238,7 +240,7 @@ export const Profile: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <div className="min-w-0 flex-1 basis-40">
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">
-                        Email
+                        {t("settings.profile.email")}
                       </h3>
                       <p className="mt-0.5 truncate text-xs font-medium text-slate-500 dark:text-neutral-400">
                         {email}

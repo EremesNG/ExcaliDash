@@ -9,6 +9,7 @@ import { UpdateBanner } from "./UpdateBanner";
 import type { Collection } from "../types";
 import clsx from "clsx";
 import { displayFontFamily } from "../utils/displayFont";
+import { useLocale } from "../context/useLocale";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onDeleteCollection,
   onDrop,
 }) => {
+  const { t } = useLocale();
   const location = useLocation();
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [isResizing, setIsResizing] = useState(false);
@@ -119,6 +121,10 @@ export const Layout: React.FC<LayoutProps> = ({
     setIsSidebarOpen(false);
   }, [isMobile, location.pathname, location.search]);
 
+  const menuLabel = isSidebarOpen
+    ? t("dashboard.shell.closeMenu")
+    : t("dashboard.shell.openMenu");
+
   return (
     <div className="h-screen w-full bg-[#F3F4F6] dark:bg-neutral-950 p-2 sm:p-4 transition-colors duration-200 overflow-hidden">
       {isMobile ? (
@@ -129,8 +135,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 type="button"
                 onClick={() => setIsSidebarOpen((v) => !v)}
                 className="ui-icon-button h-11 w-11"
-                title={isSidebarOpen ? "Close menu" : "Open menu"}
-                aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+                title={menuLabel}
+                aria-label={menuLabel}
               >
                 {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -144,7 +150,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   ExcaliDash
                 </span>
                 <span className="mt-2 text-[10px] font-bold text-red-500">
-                  Beta
+                  {t("dashboard.shell.beta")}
                 </span>
               </div>
             </div>
@@ -187,7 +193,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <div
               className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-indigo-400 dark:hover:bg-indigo-500 transition-all duration-150 ${isResizing ? "bg-indigo-500 dark:bg-indigo-400 w-2" : ""} group`}
               onMouseDown={handleMouseDown}
-              title="Drag to resize sidebar"
+              title={t("dashboard.shell.resizeSidebar")}
             >
               <div className="absolute inset-y-0 -left-0.5 -right-0.5 bg-transparent hover:bg-indigo-500/10 dark:hover:bg-indigo-400/10 transition-colors duration-150" />
             </div>
@@ -213,7 +219,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <div
               className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize bg-transparent hover:bg-indigo-400 dark:hover:bg-indigo-500 transition-all duration-150 ${isResizing ? "bg-indigo-500 dark:bg-indigo-400 w-2" : ""} group`}
               onMouseDown={handleMouseDown}
-              title="Drag to resize sidebar"
+              title={t("dashboard.shell.resizeSidebar")}
             >
               <div className="absolute inset-y-0 -left-0.5 -right-0.5 bg-transparent hover:bg-indigo-500/10 dark:hover:bg-indigo-400/10 transition-colors duration-150" />
             </div>

@@ -23,6 +23,8 @@ excalidraw.com. See the [editor update procedure](docs/UPDATES.md#actualizar-el-
 - Version history, preview and restore.
 - Private image uploads and downloads, drawing duplication and trash.
 - Per-user Excalidraw library and preferences.
+- English and Spanish UI with a shared app/editor language selection in Settings;
+  the first visit follows your browser language.
 - `.excalidraw` import/export and upstream-compatible `.excalidash` ZIP backups.
 - Cross-session collaboration through authenticated HTTP polling.
 

@@ -1,10 +1,11 @@
 import JSZip from "jszip";
 import upstream from "../upstream.json";
+import { API_ERROR_CODES, type ApiErrorMessage } from "./error-codes";
 // Sites adapter: original REST contracts, D1 metadata/CAS, immutable R2 scenes.
 const MAX_JSON = 16 * 1024 * 1024;
 const json = (data: unknown, status = 200) => Response.json(data, {status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-class HttpError extends Error { constructor(public status:number,message:string){super(message)} }
-const assert = (value:any, status:number, message:string):void => { if(!value) throw new HttpError(status,message); };
+class HttpError extends Error { constructor(public status:number,public message:ApiErrorMessage){super(message)} }
+const assert = (value:any, status:number, message:ApiErrorMessage):void => { if(!value) throw new HttpError(status,message); };
 const uid = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const pinnedEditor = {
@@ -52,7 +53,11 @@ const safeId = (id:string) => /^[a-zA-Z0-9_-]{1,160}$/.test(id);
 const nameOf = (v:any) => { assert(typeof v==='string' && v.trim().length>0 && v.length<=500,400,'Invalid name'); return v.trim(); };
 async function body(req:Request){ assert(Number(req.headers.get('content-length')||0)<=MAX_JSON,413,'Request too large'); const raw=await req.text(); assert(raw.length<=MAX_JSON,413,'Request too large'); try{return raw?JSON.parse(raw):{}}catch{throw new HttpError(400,'Invalid JSON')} }
 export async function api(req:Request,env:any):Promise<Response>{
- try { return await route(req,env); } catch(e:any){if(!(e instanceof HttpError)) console.error('Sites API error',e);return json({error:e instanceof HttpError?e.message:'Internal server error'}, e instanceof HttpError?e.status:500);}
+ try { return await route(req,env); } catch(e:any){
+  if(!(e instanceof HttpError)) console.error('Sites API error',e);
+  const error=e instanceof HttpError?e.message:'Internal server error';
+  return json({error,code:API_ERROR_CODES[error]}, e instanceof HttpError?e.status:500);
+ }
 }
 async function route(req:Request,env:any):Promise<Response>{
  const url=new URL(req.url), p=url.pathname.replace(/^\/api/,'').split('/').filter(Boolean).map(decodeURIComponent), method=req.method;

@@ -1,3 +1,4 @@
+import { translate } from "../i18n";
 import {
   readImageCompressionEnabled,
   readImageCompressionThresholdMb,
@@ -41,7 +42,7 @@ const loadImageFromDataUrl = (dataURL: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Failed to decode image data"));
+    image.onerror = () => reject(new Error(translate("importExport.image.decodeFailed")));
     image.src = dataURL;
   });
 
@@ -74,7 +75,7 @@ const drawToCanvas = (
   canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) {
-    throw new Error("Failed to get canvas context for image compression");
+    throw new Error(translate("importExport.image.canvasFailed"));
   }
   context.drawImage(image, 0, 0, width, height);
   return canvas;

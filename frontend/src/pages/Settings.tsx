@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Layout } from "../components/Layout";
 import { useNavigate } from "react-router-dom";
 import * as api from "../api";
@@ -12,10 +12,9 @@ import { SettingsConfirmModals } from "./settings/SettingsConfirmModals";
 import { ApiKeysCard } from "./profile/ApiKeysCard";
 import { Toaster } from "sonner";
 import { displayFontFamily } from "../utils/displayFont";
-import {
-  EXCALIDASH_REQUIRED_MESSAGE,
-  isExcalidashFile,
-} from "../utils/importUtils";
+import { isExcalidashFile } from "../utils/importUtils";
+import { useLocale } from "../context/useLocale";
+import { getApiErrorMessage, getApiErrorMessageAsync } from "../utils/getApiErrorMessage";
 import { resetImageCompressionMemo } from "../utils/imageCompression";
 import {
   IMAGE_COMPRESSION_ENABLED_KEY,
@@ -24,6 +23,7 @@ import {
   writeImageCompressionThresholdMb,
 } from "../utils/imageCompressionSettings";
 export const Settings: React.FC = () => {
+  const { t } = useLocale();
   const [collections, setCollections] = useState<Collection[]>([]);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -82,7 +82,7 @@ export const Settings: React.FC = () => {
     isOpen: boolean;
     message: string;
   }>({ isOpen: false, message: "" });
-  const appVersion = import.meta.env.VITE_APP_VERSION || "Unknown version";
+  const appVersion = import.meta.env.VITE_APP_VERSION || t("settings.version.unknown");
   const buildLabel = import.meta.env.VITE_APP_BUILD_LABEL;
   const isManagedAuthMode = authMode !== "local";
   const UPDATE_CHANNEL_KEY = "excalidash-update-channel";
@@ -131,7 +131,7 @@ export const Settings: React.FC = () => {
     resetImageCompressionMemo();
     setImageCompressionThresholdMb(next);
   };
-  const checkForUpdates = async (channel: api.UpdateChannel) => {
+  const checkForUpdates = useCallback(async (channel: api.UpdateChannel) => {
     setUpdateLoading(true);
     setUpdateError(null);
     try {
@@ -146,19 +146,14 @@ export const Settings: React.FC = () => {
         // Ignore unavailable storage in private/embedded contexts.
       }
     } catch (err: unknown) {
-      let message = "Failed to check for updates";
-      if (api.isAxiosError(err)) {
-        message =
-          err.response?.data?.message || err.response?.data?.error || message;
-      }
-      setUpdateError(message);
+      setUpdateError(getApiErrorMessage(err, t("settings.errors.updates")));
     } finally {
       setUpdateLoading(false);
     }
-  };
+  }, [t]);
   useEffect(() => {
     void checkForUpdates(updateChannel);
-  }, [updateChannel]);
+  }, [updateChannel, checkForUpdates]);
   const setAuthEnabled = async (enabled: boolean) => {
     setAuthToggleLoading(true);
     setAuthToggleError(null);
@@ -175,12 +170,7 @@ export const Settings: React.FC = () => {
       }
       window.location.reload();
     } catch (err: unknown) {
-      let message = "Failed to update authentication setting";
-      if (api.isAxiosError(err)) {
-        message =
-          err.response?.data?.message || err.response?.data?.error || message;
-      }
-      setAuthToggleError(message);
+      setAuthToggleError(getApiErrorMessage(err, t("settings.errors.auth")));
     } finally {
       setAuthToggleLoading(false);
     }
@@ -209,7 +199,7 @@ export const Settings: React.FC = () => {
       console.error("Backup export failed:", err);
       setBackupImportError({
         isOpen: true,
-        message: "Failed to export backup. Please try again.",
+        message: await getApiErrorMessageAsync(err, t("settings.errors.export")),
       });
     }
   };
@@ -217,7 +207,7 @@ export const Settings: React.FC = () => {
     if (!isExcalidashFile(file)) {
       setBackupImportError({
         isOpen: true,
-        message: EXCALIDASH_REQUIRED_MESSAGE,
+        message: t("settings.errors.backupRequired"),
       });
       return;
     }
@@ -249,12 +239,10 @@ export const Settings: React.FC = () => {
       });
     } catch (err: unknown) {
       console.error("Backup verify failed:", err);
-      let message = "Failed to verify backup file.";
-      if (api.isAxiosError(err)) {
-        message =
-          err.response?.data?.message || err.response?.data?.error || message;
-      }
-      setBackupImportError({ isOpen: true, message });
+      setBackupImportError({
+        isOpen: true,
+        message: getApiErrorMessage(err, t("settings.errors.verifyBackup")),
+      });
     } finally {
       setBackupImportLoading(false);
     }
@@ -285,12 +273,10 @@ export const Settings: React.FC = () => {
       });
     } catch (err: unknown) {
       console.error("Legacy DB verify failed:", err);
-      let message = "Failed to verify legacy database file.";
-      if (api.isAxiosError(err)) {
-        message =
-          err.response?.data?.message || err.response?.data?.error || message;
-      }
-      setImportError({ isOpen: true, message });
+      setImportError({
+        isOpen: true,
+        message: getApiErrorMessage(err, t("settings.errors.verifyLegacy")),
+      });
     } finally {
       setLegacyDbImportLoading(false);
     }
@@ -332,7 +318,7 @@ export const Settings: React.FC = () => {
           style={{ fontFamily: displayFontFamily }}
         >
           {" "}
-          Settings{" "}
+          {t("settings.title")}{" "}
         </h1>{" "}
         {authToggleError && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
@@ -349,12 +335,14 @@ export const Settings: React.FC = () => {
             </p>
           </div>
         )}{" "}
-        <div className="space-y-10">
-          <ApiKeysCard
-            disabled={mustResetPassword}
-            onSuccess={setSettingsSuccess}
-          />
-        </div>
+        {authMode !== "oidc_enforced" && (
+          <div className="space-y-10">
+            <ApiKeysCard
+              disabled={mustResetPassword}
+              onSuccess={setSettingsSuccess}
+            />
+          </div>
+        )}
         <div className="mt-10">
           <SettingsMainGrid
             exportBackup={exportBackup}

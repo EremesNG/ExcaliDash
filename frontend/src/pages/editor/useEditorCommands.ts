@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import type { FormEvent, MutableRefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { translate } from "../../i18n";
 import * as api from "../../api";
 import { exportFromEditor } from "../../utils/exportUtils";
 import {
@@ -116,7 +117,7 @@ export const useEditorCommands = ({
             suppressErrors: false,
           });
           refs.savePreview.current(drawingId, safeElements, appState, files);
-          toast.success("Saved changes to server");
+          toast.success(translate("editor.save.saved"));
         } catch (err) {
           console.error("Failed to save on Ctrl+S", err);
           // enqueueSceneSave surfaces its own conflict/error toast; avoid a
@@ -181,7 +182,7 @@ export const useEditorCommands = ({
       } catch (err) {
         console.error("Failed to rename", err);
         setDrawingName(previousName);
-        toast.error("Failed to rename drawing");
+        toast.error(translate("editor.save.renameFailed"));
       }
     },
     [
@@ -231,7 +232,7 @@ export const useEditorCommands = ({
           !hasRenderableElements(safeElements)
         ) {
           toast.warning(
-            "Blank scene detected on load. Skipping save to protect existing data.",
+            translate("editor.save.blankProtected"),
           );
           shouldNavigate = true;
         } else {
@@ -246,7 +247,7 @@ export const useEditorCommands = ({
       }
     } catch (err) {
       console.error("Failed to save on back navigation", err);
-      toast.error("Failed to save changes. Please retry before leaving.");
+      toast.error(translate("editor.save.leaveFailed"));
     } finally {
       setIsSavingOnLeave(false);
     }
@@ -270,10 +271,10 @@ export const useEditorCommands = ({
     const files = refs.excalidrawAPI.current.getFiles() || {};
     try {
       await exportFromEditor(drawingId, drawingName, elements, appState, files);
-      toast.success("Drawing exported");
+      toast.success(translate("editor.export.success"));
     } catch (error) {
       console.error("Failed to export drawing", error);
-      toast.error("Failed to bundle drawing images. Please try again.");
+      toast.error(translate("editor.export.imagesFailed"));
     }
   }, [drawingId, drawingName, refs]);
 

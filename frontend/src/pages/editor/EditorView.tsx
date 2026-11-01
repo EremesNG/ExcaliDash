@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocale } from "../../context/useLocale";
 import type { DrawingSnapshotFull } from "../../api";
 import { HistoryPreviewCanvas } from "./HistoryPreviewCanvas";
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
@@ -143,7 +144,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
   onHistoryOpen,
   onToggleAutoHide,
   onToggleTheme,
-}) => (
+}) => {
+  const { t } = useLocale();
+  return (
   <div
     className="h-screen flex flex-col bg-white dark:bg-neutral-950 overflow-hidden"
     onKeyDownCapture={(event) => {
@@ -163,13 +166,14 @@ export const EditorView: React.FC<EditorViewProps> = ({
       <div className="flex items-center gap-4">
         <button
           onClick={onBackClick}
+          aria-label={t("editor.chrome.back")}
           disabled={isSavingOnLeave}
           className={`flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-wait transition-all duration-200 ${isSavingOnLeave ? "pr-4" : ""}`}
         >
           {isSavingOnLeave ? (
             <>
               <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm font-medium">Saving changes...</span>
+              <span className="text-sm font-medium">{t("editor.chrome.saving")}</span>
             </>
           ) : (
             <ArrowLeft size={20} />
@@ -200,16 +204,16 @@ export const EditorView: React.FC<EditorViewProps> = ({
         {canEdit && autosaveFailing ? (
           <span
             className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200 border border-red-200 dark:border-red-800"
-            title="Your recent changes could not be saved. Check your connection and try again."
+            title={t("editor.chrome.unsavedHint")}
             role="status"
           >
             <CloudOff size={14} />
-            Unsaved changes
+            {t("editor.chrome.unsaved")}
           </span>
         ) : null}
         {!canEdit ? (
           <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
-            Read-only
+            {t("editor.chrome.readOnly")}
           </span>
         ) : null}
         {canEdit && id ? (
@@ -217,7 +221,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
             ref={historyButtonRef}
             onClick={onHistoryOpen}
             className="ui-toolbar-button"
-            title="Version History"
+            title={t("editor.chrome.history")}
           >
             <History size={20} />
           </button>
@@ -228,7 +232,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
               ref={shareButtonRef}
               onClick={onShareOpen}
               className="ui-toolbar-button"
-              title="Share"
+              title={t("editor.chrome.share")}
             >
               <Share2 size={20} />
             </button>
@@ -237,7 +241,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
         <button
           onClick={onToggleAutoHide}
           className="ui-toolbar-button"
-          title={autoHideEnabled ? "Disable auto-hide" : "Enable auto-hide"}
+          title={autoHideEnabled ? t("editor.chrome.disableAutoHide") : t("editor.chrome.enableAutoHide")}
         >
           {autoHideEnabled ? (
             <ChevronUp size={20} />
@@ -249,13 +253,13 @@ export const EditorView: React.FC<EditorViewProps> = ({
         <button
           onClick={onExportClick}
           className="ui-toolbar-button"
-          title="Export drawing"
+          title={t("editor.chrome.export")}
         >
           <Download size={20} />
         </button>
         <div className="h-6 w-px bg-gray-300 dark:bg-gray-700" />
         <div className="flex items-center">
-          <CollaboratorAvatar user={me} label={`${me.name} (You)`} />
+          <CollaboratorAvatar user={me} label={t("editor.chrome.you", { name: me.name })} />
           {peers.length > 0 ? (
             <>
               <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2" />
@@ -303,14 +307,14 @@ export const EditorView: React.FC<EditorViewProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white dark:bg-neutral-950 px-6">
           <div className="text-center">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Unable to open drawing
+              {t("editor.chrome.openFailed")}
             </h2>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {loadError}
             </p>
           </div>
           <button onClick={onNavigateHome} className="ui-button-secondary px-4">
-            Back to dashboard
+            {t("editor.chrome.dashboard")}
           </button>
         </div>
       ) : initialData ? (
@@ -329,7 +333,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
         >
           <MainMenu>
             <MainMenu.Item onSelect={onToggleTheme} shortcut="Shift+Alt+D">
-              {theme === "dark" ? "Light mode" : "Dark mode"}
+              {theme === "dark" ? t("editor.chrome.lightMode") : t("editor.chrome.darkMode")}
             </MainMenu.Item>
             <MainMenu.DefaultItems.SaveAsImage />
             <MainMenu.DefaultItems.ClearCanvas />
@@ -347,7 +351,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
           <span className="text-sm font-medium">
-            {isSceneLoading ? "Loading drawing..." : "Preparing canvas..."}
+            {isSceneLoading ? t("editor.chrome.loading") : t("editor.chrome.preparing")}
           </span>
         </div>
       )}
@@ -361,4 +365,5 @@ export const EditorView: React.FC<EditorViewProps> = ({
       <Toaster position="bottom-center" />
     </div>
   </div>
-);
+  );
+};
