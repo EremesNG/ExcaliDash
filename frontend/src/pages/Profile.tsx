@@ -244,7 +244,7 @@ export const Profile: React.FC = () => {
                         {email}
                       </p>
                     </div>
-                    {!showEmailForm && (
+                    {authMode !== "oidc_enforced" && !showEmailForm && (
                       <button
                         onClick={() => {
                           setShowEmailForm(true);

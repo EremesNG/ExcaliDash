@@ -87,12 +87,12 @@ export const AdvancedSettings = ({
         icon={<ArchiveRestore size={20} />}
         tileClassName="border-black bg-amber-300 text-black dark:border-neutral-700 dark:bg-amber-400 dark:text-black"
         title="Legacy import"
-        description="Import .excalidraw, legacy JSON, ZIP, or a legacy SQLite database"
+        description="Import .excalidraw, legacy JSON, or ZIP. SQLite databases must first be exported from upstream ExcaliDash."
       >
         <input
           type="file"
           multiple
-          accept=".sqlite,.db,.json,.excalidraw,.zip"
+          accept=".json,.excalidraw,.zip"
           className="hidden"
           id="settings-import-legacy"
           onChange={async (event) => {

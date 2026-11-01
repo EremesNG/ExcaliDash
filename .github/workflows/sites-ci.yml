@@ -1,0 +1,26 @@
+name: Sites source checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - run: pnpm install --frozen-lockfile
+      - run: npm --prefix frontend ci --no-audit --no-fund
+      - run: npm run check:public-source
+      - run: npm run build
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - run: node frontend/node_modules/typescript/bin/tsc -b frontend/tsconfig.json
+      - run: npm run test:frontend
+      - run: npm run test:adapter
