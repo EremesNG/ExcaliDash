@@ -4,6 +4,8 @@ A Sites-oriented adaptation of [ExcaliDash](https://github.com/ZimengXiong/Excal
 with the original React/Excalidraw frontend, ChatGPT identity, Cloudflare D1 metadata,
 and R2 scene and image storage. This fork is independently maintained.
 
+[![ExcaliDash dashboard](upstream-docs/public/images/workspace.png)](https://excalidash.xyz)
+
 | Component | Current baseline |
 | --- | --- |
 | ExcaliDash | 0.6.7 (`0f9be2d8649be7650e6bee2844739c584fa76c35`) |
